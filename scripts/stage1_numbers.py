@@ -4,11 +4,11 @@ import json, statistics as st
 from collections import defaultdict
 from pathlib import Path
 D = json.load(open(Path(__file__).resolve().parent.parent / 'src' / 'data' / 'processed' / 'data.json', encoding='utf-8')); S = D['stocks']; M = D['monthly']
-PAR = dict(N=100, stage=1.0, H=250, p=10, dr=0, df=0, g=0, eps=.5, tgtUsd=6, fx=25650, minA=10)
+PAR = dict(N=100, stage=1.0, H=250, p=10, dr=0, df=0, g=0, eps=.5, tgtUsd=1.5, fx=25650, minA=10)
 
 def model(**kw):
     o = dict(PAR, **kw)
-    U = [s for s in S[:o['N']] if s['adtv'] >= o['minA']]
+    U = [s for s in (S if o['N'] == 'ftse' else S[:o['N']]) if (s['ftse'] or o['N'] != 'ftse') and s['adtv'] >= o['minA']]
     tgt = o['tgtUsd'] * o['stage'] * o['fx']
     sF = sum(s['ff'] * s['mc'] for s in U); rows = []
     for s in U:
@@ -22,10 +22,12 @@ def model(**kw):
         rows.append(dict(s=s, R=R, F=F, L=L, cap=cap, bind=b, dem=dem, ab=ab, gap=dem - ab))
     return rows, tgt
 
-print('=== 1. Dòng vốn ngoại toàn thị trường (nghìn tỷ đồng) ===')
+print('=== 1. Dòng vốn ngoại sàn HOSE, VN-Index (nghìn tỷ đồng) ===')
 ytd = sum(m['net'] for m in M) / 1000; ym = sum(m['nm'] for m in M) / 1000; yd = sum(m['nd'] for m in M) / 1000
 print(f'Ròng cả kỳ {ytd:.1f}; khớp lệnh {ym:.1f}; thỏa thuận {yd:.1f}; tỷ trọng thỏa thuận {yd/ytd*100:.0f}%')
 print('Tháng bán ròng:', sum(m['net'] < 0 for m in M), '/ 11; tháng mạnh nhất:', min(M, key=lambda m: m['net'])['m'], round(min(m['net'] for m in M) / 1000, 1))
+oth = sum(m['oth'] for m in M) / 1000
+print(f'Cả ba sàn (cộng HNX và UPCoM {oth:+.2f}): {ytd + oth:.1f}; tháng âm:', sum(m['net'] + m['oth'] < 0 for m in M), '/ 11')
 print('Kiểm tra nm + nd = net (sai lệch lớn nhất, tỷ đồng):', max(abs(m['nm'] + m['nd'] - m['net']) for m in M))
 
 print('\n=== 2. Bằng chứng room và thỏa thuận ===')
@@ -34,7 +36,8 @@ for k, lab in [('gankin', 'room còn dưới 10%'), ('hep', '10% đến 30%'), (
 
 print('\n=== 3. Mã có dòng vốn theo tháng ===')
 F = [s for s in S if s['flow']]; tot = sum(s['net'] for s in F) / 1000
-print(f'{len(F)} mã, tổng ròng {tot:.1f} nghìn tỷ ({tot/ytd*100:.1f}% toàn thị trường)')
+FH = [s for s in F if s['ex'] == 'HOSE']; th = sum(s['net'] for s in FH) / 1000
+print(f'{len(F)} mã có dòng vốn theo tháng; {len(FH)} mã HOSE, ròng {th:.1f} nghìn tỷ ({th/ytd*100:.1f}% ròng HOSE)')
 byn = sorted(F, key=lambda s: s['net'])
 print('Bán ròng nhiều nhất:', [(s['t'], round(s['net'] / 1000, 1)) for s in byn[:8]])
 print('Mua ròng nhiều nhất:', [(s['t'], round(s['net'] / 1000, 1)) for s in byn[-6:]])
@@ -66,3 +69,25 @@ for H in (20, 60, 120, 250, 500):
 print('\n=== 6. Dữ liệu thiếu ===')
 print('GTGD trống hoặc bằng 0:', [s['t'] for s in S if not s['adtv']], '| free float trống:', [s['t'] for s in S if not s['ff']][:10])
 print('Mã không có dòng vốn theo tháng:', len(S) - len(F), '| mã dưới ngưỡng GTGD 10 tỷ trong top 100:', sum(1 for s in S[:100] if s['adtv'] < 10))
+
+def cov(**kw):
+    r, t = model(**kw); return sum(x['ab'] for x in r) / t, r
+print('\n=== 7. Kịch bản tổng vốn (mặc định US$1,5 tỷ thụ động) và rổ FTSE ===')
+for lab, kw in [('US$1,5 tỷ', {}), ('US$2,2 tỷ', dict(tgtUsd=2.2)), ('US$6 tỷ gồm chủ động', dict(tgtUsd=6)), ('Rổ FTSE 27 mã, US$1,5 tỷ', dict(N='ftse'))]:
+    c, r = cov(**kw); blk = defaultdict(int)
+    for x in r:
+        if x['gap'] > 1e-6: blk[x['bind']] += 1
+    lev = {n: round((cov(**dict(kw, **k))[0] - c) * 100, 1) for n, k in [('room+5', dict(dr=5)), ('ff+10', dict(df=10)), ('tk+20%', dict(g=20)), ('cả ba', dict(dr=5, df=10, g=20))]}
+    print(f'{lab:26s} rổ {len(r)} mã, độ phủ {c*100:.1f}%, mã thực sự thiếu dư địa {dict(blk)}, tăng thêm {lev}')
+
+print('\n=== 8. Kiểm chứng FTSE: headroom ngày 30/6/2026 (tháng 6) ===')
+FOL = lambda s: s['room'] + s['fown']; HR6 = lambda s: s['flow'][5][2] if s['flow'] and s['flow'][5] and s['flow'][5][2] is not None else None
+FT = [s for s in S if s['ftse']]
+print('27 mã FTSE: headroom nhỏ nhất', min((HR6(s), s['t']) for s in FT))
+out = [s for s in sorted(S, key=lambda s: -s['mc'])[:60] if s['ex'] == 'HOSE' and not s['ftse'] and HR6(s) is not None]
+lost = [s for s in out if HR6(s) < .2 and FOL(s) >= .1]
+inv = lambda s: s['mc'] * min(s['ff'], FOL(s)); I27 = sum(inv(s) for s in FT)
+for s in sorted(lost, key=lambda s: -inv(s)):
+    need = max(0, (.2 * FOL(s) - s['room']) / .8)
+    print(f"{s['t']:4s} headroom 30/6 {HR6(s)*100:5.1f}%  19/11 {s['room']/FOL(s)*100:5.1f}%  trần {FOL(s)*100:4.1f}%  cần nới {need*100:5.2f} điểm  vốn ~{1500*inv(s)/I27:4.0f} triệu US$")
+print('Tổng vốn thụ động ước tính (US$1,5 tỷ):', round(sum(1500 * inv(s) / I27 for s in lost)), 'triệu US$')

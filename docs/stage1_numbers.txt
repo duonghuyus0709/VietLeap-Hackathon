@@ -1,6 +1,7 @@
-=== 1. Dòng vốn ngoại toàn thị trường (nghìn tỷ đồng) ===
+=== 1. Dòng vốn ngoại sàn HOSE, VN-Index (nghìn tỷ đồng) ===
 Ròng cả kỳ -126.0; khớp lệnh -96.2; thỏa thuận -29.8; tỷ trọng thỏa thuận 24%
 Tháng bán ròng: 11 / 11; tháng mạnh nhất: 10 -24.0
+Cả ba sàn (cộng HNX và UPCoM +2.64): -123.4; tháng âm: 11 / 11
 Kiểm tra nm + nd = net (sai lệch lớn nhất, tỷ đồng): 0.1000000000003638
 
 === 2. Bằng chứng room và thỏa thuận ===
@@ -9,30 +10,48 @@ room còn dưới 10%    quan sát   62 mã  10 gộp  36.0% trung vị  17.2% r
 từ 30% trở lên       quan sát  978 mã  98 gộp  14.0% trung vị   0.0% ròng/giao dịch  -9.1%
 
 === 3. Mã có dòng vốn theo tháng ===
-124 mã, tổng ròng -113.0 nghìn tỷ (89.7% toàn thị trường)
+124 mã có dòng vốn theo tháng; 88 mã HOSE, ròng -116.0 nghìn tỷ (92.0% ròng HOSE)
 Bán ròng nhiều nhất: [('VHM', -22.9), ('FPT', -18.5), ('VIC', -11.1), ('MCH', -8.7), ('ACB', -8.2), ('VCB', -7.5), ('STB', -6.3), ('HDB', -5.5)]
 Mua ròng nhiều nhất: [('DCM', 0.9), ('MBB', 1.7), ('MWG', 2.1), ('MSN', 3.4), ('MSR', 3.6), ('HPG', 4.3)]
 Top 10 bán ròng chiếm 70 % tổng bán ròng của các mã bán ròng
 
 === 4. Rổ mô phỏng, thiết lập cơ sở ===
-Rổ 81 mã, mục tiêu 153.9 nghìn tỷ, hấp thụ 118.0, độ phủ 76.7%, bỏ lỡ 35.9
-Nút thắt: {'liq': 67, 'room': 14} | bỏ lỡ: {'liq': 23.4, 'room': 12.5} | dư địa: {'liq': 254.1, 'room': 29.8}
+Rổ 77 mã, mục tiêu 38.5 nghìn tỷ, hấp thụ 37.1, độ phủ 96.4%, bỏ lỡ 1.4
+Nút thắt: {'liq': 68, 'room': 9} | bỏ lỡ: {'liq': 0.0, 'room': 1.4} | dư địa: {'liq': 224.8, 'room': 10.0}
 Kiểm tra tổng nhu cầu = mục tiêu: True | cap <= min(R,F,L): True
-12 mã bỏ lỡ nhiều nhất: [('VIC', 'liq', 22.2), ('MWG', 'room', 4.2), ('MBB', 'room', 2.5), ('TCB', 'room', 2.5), ('VIB', 'room', 1.2), ('LPB', 'room', 0.9), ('NVB', 'liq', 0.6), ('REE', 'room', 0.5), ('VEA', 'room', 0.3), ('DMX', 'liq', 0.3), ('GVR', 'room', 0.2), ('SJS', 'liq', 0.2)]
-Theo ngành (số mã, nhu cầu, bỏ lỡ nghìn tỷ): [('Bất động sản', 12, 48.8, 22.3), ('Ngân hàng', 20, 58.4, 7.8), ('Bán lẻ', 3, 5.6, 4.5), ('Điện, nước & xăng dầu khí đốt', 3, 1.4, 0.5), ('Hàng & Dịch vụ Công nghiệp', 7, 3.7, 0.3), ('Hóa chất', 3, 0.7, 0.2)]
-Điểm nóng (room chặn và nhu cầu từ trung vị trở lên): 9 ['MWG', 'MBB', 'TCB', 'VIB', 'LPB', 'HDB', 'TPB', 'GMD', 'ABB']
+12 mã bỏ lỡ nhiều nhất: [('MWG', 'room', 1.1), ('REE', 'room', 0.1), ('VEA', 'room', 0.1), ('GVR', 'room', 0.1), ('VGI', 'room', 0.0), ('VIC', 'liq', 0.0), ('VHM', 'liq', 0.0), ('VCB', 'liq', 0.0), ('BID', 'liq', 0.0), ('CTG', 'liq', 0.0), ('TCB', 'room', 0.0), ('VPB', 'liq', 0.0)]
+Theo ngành (số mã, nhu cầu, bỏ lỡ nghìn tỷ): [('Bán lẻ', 2, 1.3, 1.1), ('Điện, nước & xăng dầu khí đốt', 3, 0.4, 0.1), ('Hàng & Dịch vụ Công nghiệp', 6, 0.9, 0.1), ('Hóa chất', 3, 0.2, 0.1), ('Viễn thông', 1, 0.0, 0.0), ('Bất động sản', 11, 12.2, 0.0)]
+Điểm nóng (room chặn và nhu cầu từ trung vị trở lên): 5 ['MWG', 'TCB', 'MBB', 'VIB', 'TPB']
 
 === 5. Đòn bẩy, độ phủ tăng thêm (điểm %) ===
-room +5            độ phủ  84.8%  tăng +8.1
-free float +10     độ phủ  78.0%  tăng +1.3
-thanh khoản +20%   độ phủ  78.5%  tăng +1.9
-cả ba              độ phủ  88.1%  tăng +11.4
-H 20 [8, 17, 25, 32, 38]
-H 60 [25, 44, 55, 63, 68]
-H 120 [44, 63, 72, 76, 79]
-H 250 [64, 77, 81, 85, 89]
-H 500 [77, 85, 92, 92, 92]
+room +5            độ phủ 100.0%  tăng +3.6
+free float +10     độ phủ  96.4%  tăng +0.0
+thanh khoản +20%   độ phủ  96.4%  tăng +0.0
+cả ba              độ phủ 100.0%  tăng +3.6
+H 20 [25, 43, 55, 65, 72]
+H 60 [55, 76, 83, 88, 92]
+H 120 [76, 88, 96, 96, 96]
+H 250 [89, 96, 96, 96, 96]
+H 500 [96, 96, 96, 96, 96]
 
 === 6. Dữ liệu thiếu ===
-GTGD trống hoặc bằng 0: ['SSH', 'DNH', 'IDP', 'CRV', 'HGI', 'RGG', 'DVV', 'TBD', 'VUG', 'VUA', 'VFC', 'PHS', 'ITA', 'TSJ', 'DCF', 'ASG', 'HHC', 'HPI', 'BVL', 'TIX', 'VES', 'LDW', 'HAC'] | free float trống: []
-Mã không có dòng vốn theo tháng: 276 | mã dưới ngưỡng GTGD 10 tỷ trong top 100: 19
+GTGD trống hoặc bằng 0: ['SSH', 'DNH', 'IDP', 'CRV', 'LGC', 'HGI', 'RGG', 'DVV', 'TBD', 'VUG', 'VUA', 'VFC', 'PHS', 'ITA', 'TSJ', 'DCF', 'ASG', 'DNA', 'HHC', 'HPI', 'BVL', 'TIX', 'VES', 'LDW', 'HAC'] | free float trống: []
+Mã không có dòng vốn theo tháng: 276 | mã dưới ngưỡng GTGD 10 tỷ trong top 100: 23
+
+=== 7. Kịch bản tổng vốn (mặc định US$1,5 tỷ thụ động) và rổ FTSE ===
+US$1,5 tỷ                  rổ 77 mã, độ phủ 96.4%, mã thực sự thiếu dư địa {'room': 5}, tăng thêm {'room+5': 3.6, 'ff+10': 0.0, 'tk+20%': 0.0, 'cả ba': 3.6}
+US$2,2 tỷ                  rổ 77 mã, độ phủ 94.6%, mã thực sự thiếu dư địa {'liq': 2, 'room': 6}, tăng thêm {'room+5': 3.8, 'ff+10': 1.4, 'tk+20%': 1.5, 'cả ba': 5.3}
+US$6 tỷ gồm chủ động       rổ 77 mã, độ phủ 72.7%, mã thực sự thiếu dư địa {'liq': 11, 'room': 8}, tăng thêm {'room+5': 7.6, 'ff+10': 1.8, 'tk+20%': 3.2, 'cả ba': 12.7}
+Rổ FTSE 27 mã, US$1,5 tỷ   rổ 27 mã, độ phủ 97.4%, mã thực sự thiếu dư địa {'liq': 1}, tăng thêm {'room+5': 0.0, 'ff+10': 2.6, 'tk+20%': 2.6, 'cả ba': 2.6}
+
+=== 8. Kiểm chứng FTSE: headroom ngày 30/6/2026 (tháng 6) ===
+27 mã FTSE: headroom nhỏ nhất (0.2018, 'VPB')
+MWG  headroom 30/6   0.1%  19/11   0.0%  trần 49.0%  cần nới 12.25 điểm  vốn ~  50 triệu US$
+TCB  headroom 30/6   3.9%  19/11   7.9%  trần 22.5%  cần nới  3.41 điểm  vốn ~  47 triệu US$
+MBB  headroom 30/6   4.5%  19/11   5.7%  trần 23.2%  cần nới  4.16 điểm  vốn ~  42 triệu US$
+CTG  headroom 30/6  17.7%  19/11  18.1%  trần 30.0%  cần nới  0.71 điểm  vốn ~  33 triệu US$
+ACB  headroom 30/6  18.1%  19/11  26.9%  trần 30.0%  cần nới  0.00 điểm  vốn ~  33 triệu US$
+GMD  headroom 30/6  16.4%  19/11  23.9%  trần 49.0%  cần nới  0.00 điểm  vốn ~  15 triệu US$
+REE  headroom 30/6   0.0%  19/11   0.0%  trần 49.0%  cần nới 12.25 điểm  vốn ~  10 triệu US$
+OCB  headroom 30/6  10.5%  19/11  14.5%  trần 22.0%  cần nới  1.51 điểm  vốn ~   7 triệu US$
+Tổng vốn thụ động ước tính (US$1,5 tỷ): 237 triệu US$

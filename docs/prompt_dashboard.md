@@ -155,3 +155,16 @@ Bạn là một giám khảo đa nghi của hackathon.
 
 TASK
 Mở dashboard và mã tạo ra nó. Nêu ba con số bạn sẽ nghi ngờ đầu tiên và tính lại từng số từ dữ liệu thô. Sau đó nói trong hai câu: dashboard này chưa cho thấy điều gì mà người đọc cần.
+
+
+---
+
+## Sửa đổi sau kiểm định (20/11/2026)
+
+Phần này ghi lại các thay đổi so với prompt gốc ở trên, sau khi nhóm kiểm định lại dữ liệu và giả định. Prompt gốc được giữ nguyên để làm nhật ký.
+
+1. Ròng khối ngoại lấy theo VN-Index là của sàn HOSE, không phải toàn thị trường. Thêm HNXINDEX và UPCOMINDEX để có số cả ba sàn.
+2. US$6 tỷ là ước tính của FTSE gồm cả quỹ chủ động và thụ động; riêng thụ động khoảng US$1,5 tỷ. Mặc định của mô phỏng đổi thành US$1,5 tỷ, có bộ chọn 1,5 / 2,2 / 6.
+3. L dùng giá trị giao dịch khớp lệnh bình quân (avg_matched_value), vì quỹ thụ động mua trên sổ lệnh.
+4. "Nút thắt" là giới hạn chặt nhất; "mã thiếu dư địa" chỉ là mã có nhu cầu lớn hơn dư địa. Hai khái niệm được tách trong lời văn và bảng.
+5. Thêm rổ FTSE 27 mã thật (FAQ của FTSE Russell v1.3) và thẻ kiểm chứng: FTSE yêu cầu mã mới có headroom từ 20%, xét với dữ liệu 30/6/2026. QUALITY CHECKS mới: cả 27 mã có headroom tháng 6 từ 20,2% trở lên; độ phủ mặc định 96,4%, sau đòn bẩy 100,0%; kịch bản US$6 tỷ 72,7%, sau đòn bẩy 85,4%; vốn thụ động ước tính mất do room khoảng 237 triệu US$.

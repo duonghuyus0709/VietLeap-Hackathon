@@ -1,0 +1,27 @@
+{
+  "note": "Ròng khối ngoại theo tháng (VND) của HNXINDEX và UPCOMINDEX, 1/1 đến 19/11/2026. Trích trường foreignNetValueTotal từ phản hồi FiinQuant MCP get_market_statistics(tickers=['HNXINDEX','UPCOMINDEX'], metric='foreign_flow', time_filter='Monthly'), gọi ngày 20/11/2026.",
+  "records": [
+    {"ticker": "HNXIndex", "month": 1, "foreignNetValueTotal": -87099188400.0},
+    {"ticker": "HNXIndex", "month": 2, "foreignNetValueTotal": 57714743800.0},
+    {"ticker": "HNXIndex", "month": 3, "foreignNetValueTotal": 646960723500.0},
+    {"ticker": "HNXIndex", "month": 4, "foreignNetValueTotal": 294742520300.0},
+    {"ticker": "HNXIndex", "month": 5, "foreignNetValueTotal": 28363009900.0},
+    {"ticker": "HNXIndex", "month": 6, "foreignNetValueTotal": -17137633300.0},
+    {"ticker": "HNXIndex", "month": 7, "foreignNetValueTotal": -182702694900.0},
+    {"ticker": "HNXIndex", "month": 8, "foreignNetValueTotal": 71224950100.0},
+    {"ticker": "HNXIndex", "month": 9, "foreignNetValueTotal": -110381167100.0},
+    {"ticker": "HNXIndex", "month": 10, "foreignNetValueTotal": -138946171800.0},
+    {"ticker": "HNXIndex", "month": 11, "foreignNetValueTotal": -52596098700.0},
+    {"ticker": "UpcomIndex", "month": 1, "foreignNetValueTotal": -690784982700.0},
+    {"ticker": "UpcomIndex", "month": 2, "foreignNetValueTotal": -61944980900.0},
+    {"ticker": "UpcomIndex", "month": 3, "foreignNetValueTotal": -536803897000.0},
+    {"ticker": "UpcomIndex", "month": 4, "foreignNetValueTotal": 22548152400.0},
+    {"ticker": "UpcomIndex", "month": 5, "foreignNetValueTotal": -265107815200.0},
+    {"ticker": "UpcomIndex", "month": 6, "foreignNetValueTotal": 44476232600.0},
+    {"ticker": "UpcomIndex", "month": 7, "foreignNetValueTotal": -125303894600.0},
+    {"ticker": "UpcomIndex", "month": 8, "foreignNetValueTotal": 215720299000.0},
+    {"ticker": "UpcomIndex", "month": 9, "foreignNetValueTotal": 285034480600.0},
+    {"ticker": "UpcomIndex", "month": 10, "foreignNetValueTotal": 3314831685292.0},
+    {"ticker": "UpcomIndex", "month": 11, "foreignNetValueTotal": -68174286000.0}
+  ]
+}
