@@ -1,0 +1,38 @@
+=== 1. Dòng vốn ngoại toàn thị trường (nghìn tỷ đồng) ===
+Ròng cả kỳ -126.0; khớp lệnh -96.2; thỏa thuận -29.8; tỷ trọng thỏa thuận 24%
+Tháng bán ròng: 11 / 11; tháng mạnh nhất: 10 -24.0
+Kiểm tra nm + nd = net (sai lệch lớn nhất, tỷ đồng): 0.1000000000003638
+
+=== 2. Bằng chứng room và thỏa thuận ===
+room còn dưới 10%    quan sát   62 mã  10 gộp  36.0% trung vị  17.2% ròng/giao dịch  -1.3%
+10% đến 30%          quan sát  129 mã  16 gộp  21.8% trung vị   0.9% ròng/giao dịch -14.8%
+từ 30% trở lên       quan sát  978 mã  98 gộp  14.0% trung vị   0.0% ròng/giao dịch  -9.1%
+
+=== 3. Mã có dòng vốn theo tháng ===
+124 mã, tổng ròng -113.0 nghìn tỷ (89.7% toàn thị trường)
+Bán ròng nhiều nhất: [('VHM', -22.9), ('FPT', -18.5), ('VIC', -11.1), ('MCH', -8.7), ('ACB', -8.2), ('VCB', -7.5), ('STB', -6.3), ('HDB', -5.5)]
+Mua ròng nhiều nhất: [('DCM', 0.9), ('MBB', 1.7), ('MWG', 2.1), ('MSN', 3.4), ('MSR', 3.6), ('HPG', 4.3)]
+Top 10 bán ròng chiếm 70 % tổng bán ròng của các mã bán ròng
+
+=== 4. Rổ mô phỏng, thiết lập cơ sở ===
+Rổ 81 mã, mục tiêu 153.9 nghìn tỷ, hấp thụ 118.0, độ phủ 76.7%, bỏ lỡ 35.9
+Nút thắt: {'liq': 67, 'room': 14} | bỏ lỡ: {'liq': 23.4, 'room': 12.5} | dư địa: {'liq': 254.1, 'room': 29.8}
+Kiểm tra tổng nhu cầu = mục tiêu: True | cap <= min(R,F,L): True
+12 mã bỏ lỡ nhiều nhất: [('VIC', 'liq', 22.2), ('MWG', 'room', 4.2), ('MBB', 'room', 2.5), ('TCB', 'room', 2.5), ('VIB', 'room', 1.2), ('LPB', 'room', 0.9), ('NVB', 'liq', 0.6), ('REE', 'room', 0.5), ('VEA', 'room', 0.3), ('DMX', 'liq', 0.3), ('GVR', 'room', 0.2), ('SJS', 'liq', 0.2)]
+Theo ngành (số mã, nhu cầu, bỏ lỡ nghìn tỷ): [('Bất động sản', 12, 48.8, 22.3), ('Ngân hàng', 20, 58.4, 7.8), ('Bán lẻ', 3, 5.6, 4.5), ('Điện, nước & xăng dầu khí đốt', 3, 1.4, 0.5), ('Hàng & Dịch vụ Công nghiệp', 7, 3.7, 0.3), ('Hóa chất', 3, 0.7, 0.2)]
+Điểm nóng (room chặn và nhu cầu từ trung vị trở lên): 9 ['MWG', 'MBB', 'TCB', 'VIB', 'LPB', 'HDB', 'TPB', 'GMD', 'ABB']
+
+=== 5. Đòn bẩy, độ phủ tăng thêm (điểm %) ===
+room +5            độ phủ  84.8%  tăng +8.1
+free float +10     độ phủ  78.0%  tăng +1.3
+thanh khoản +20%   độ phủ  78.5%  tăng +1.9
+cả ba              độ phủ  88.1%  tăng +11.4
+H 20 [8, 17, 25, 32, 38]
+H 60 [25, 44, 55, 63, 68]
+H 120 [44, 63, 72, 76, 79]
+H 250 [64, 77, 81, 85, 89]
+H 500 [77, 85, 92, 92, 92]
+
+=== 6. Dữ liệu thiếu ===
+GTGD trống hoặc bằng 0: ['SSH', 'DNH', 'IDP', 'CRV', 'HGI', 'RGG', 'DVV', 'TBD', 'VUG', 'VUA', 'VFC', 'PHS', 'ITA', 'TSJ', 'DCF', 'ASG', 'HHC', 'HPI', 'BVL', 'TIX', 'VES', 'LDW', 'HAC'] | free float trống: []
+Mã không có dòng vốn theo tháng: 276 | mã dưới ngưỡng GTGD 10 tỷ trong top 100: 19
