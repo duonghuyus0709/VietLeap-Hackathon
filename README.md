@@ -32,6 +32,9 @@ Mở file `index.html` bằng trình duyệt. File tự chứa toàn bộ dữ l
 │       │   └── hnx_upcom_ff_net.json  # ròng khối ngoại theo tháng của HNXINDEX và UPCOMINDEX, để cộng ra cả ba sàn
 │       └── processed/
 │           └── data.json       # dữ liệu đã hợp nhất cho dashboard
+├── analysis/
+│   ├── nghich_ly_nang_hang.Rmd # báo cáo kinh tế lượng (R Markdown), đọc src/data/csv, render ra docs/nghich_ly_nang_hang.html
+│   └── nghich_ly_nang_hang.R   # toàn bộ mã R tách từ file .Rmd (knitr::purl), chạy độc lập bằng Rscript
 ├── scripts/
 │   ├── build_data.py           # src/data/raw → src/data/processed/data.json
 │   ├── stage1_numbers.py       # giai đoạn 1 của prompt: tính và in các con số kiểm trước khi vẽ
@@ -52,6 +55,13 @@ Chạy từ gốc repo:
     python3 scripts/build_data.py       # src/data/raw → src/data/processed/data.json
     python3 scripts/stage1_numbers.py   # in các con số kiểm, so với docs/stage1_numbers.txt
     python3 scripts/build_html.py       # tạo index.html
+
+Báo cáo kinh tế lượng (cần R với rmarkdown, fixest, sandwich, lmtest, car, patchwork):
+
+    python3 scripts/json_to_csv.py      # src/data/raw → src/data/csv
+    cd analysis && Rscript -e 'rmarkdown::render("nghich_ly_nang_hang.Rmd", output_dir = "../docs")'
+
+Bảng 4.4 của báo cáo đối chiếu 20 chỉ tiêu tính lại trong R với `docs/stage1_numbers.txt`; cả 20 khớp.
 
 ## Truy vết các con số chính
 | Số trên trang | Nguồn và công thức |
@@ -95,3 +105,4 @@ Dashboard được dựng với sự hỗ trợ của Claude (Anthropic) theo pr
 - Đếm "mã thiếu dư địa" chỉ tính mã có nhu cầu vượt dư địa; "giới hạn chặt nhất" không còn bị gọi là "bị chặn".
 - Thêm rổ FTSE 27 mã thật và thẻ kiểm chứng headroom 20% ở panel 02.
 - Đổi tên cột "Sau đòn bẩy" thành "Dư địa sau đòn bẩy"; sửa hiển thị trên điện thoại.
+- Đồng bộ báo cáo R với dashboard: báo cáo đọc `src/data/csv`, dùng GTGD khớp lệnh và US$1,5 tỷ; thêm số cả ba sàn, kịch bản US$2,2 / 6 tỷ, rổ FTSE 27 mã và bảng 8 mã bị loại vì headroom (khoảng 237 triệu US$). Thay "124 mã chiếm 89,7%" (mẫu số không cùng phạm vi) bằng "88 mã HOSE chiếm 92,0% ròng HOSE". Các câu về VIC, điểm nóng và kiểm định RESET nay do mã sinh ra thay vì viết cứng.

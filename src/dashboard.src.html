@@ -497,7 +497,7 @@ footer p{margin:4px 0;max-width:120ch}
   <div class="note blue" style="margin:0 0 24px">
     <p><b>Giới hạn của bằng chứng.</b> Các hệ số là quan hệ thống kê có điều kiện. Room có thể nội sinh: một mã hết room vì được khối ngoại ưa chuộng, và chính điều đó có thể đi kèm giao dịch khối lớn. Mô hình hiệu ứng cố định mã chỉ được nhận dạng từ 4 ngân hàng đổi trạng thái qua ngưỡng 10% trong năm (ABB, ACB, MSB, VIB), dù kết quả giữ dấu khi bỏ lần lượt từng mã. Chuỗi thời gian chỉ có 11 tháng.</p>
   </div>
-  <p class="src"><b>Nguồn</b>Báo cáo <a href="docs/nghich_ly_nang_hang.html">Nghịch lý nâng hạng: room ngoại, kênh thỏa thuận và khả năng hấp thụ dòng vốn thụ động FTSE</a> (R 4.6.1, fixest, sandwich), Bảng 5.2, 6.2 đến 6.8. Bảng dữ liệu 1.169 quan sát mã theo tháng của 124 mã lớn nhất, FiinQuantX foreign_flow theo tháng, chốt 19/11/2026. Phần kinh tế lượng không phụ thuộc vào các giả định thanh khoản và tổng vốn của mô phỏng.</p>
+  <p class="src"><b>Nguồn</b>Báo cáo <a href="docs/nghich_ly_nang_hang.html">Nghịch lý nâng hạng: room ngoại, kênh thỏa thuận và khả năng hấp thụ dòng vốn thụ động FTSE</a> (R 4.6.1, fixest, sandwich), Bảng 5.2, 6.2 đến 6.8. Bảng dữ liệu 1.169 quan sát mã theo tháng của 124 mã lớn nhất, FiinQuantX foreign_flow theo tháng, chốt 19/11/2026. Các mô hình bảng dữ liệu và Logit không phụ thuộc vào giả định thanh khoản và tổng vốn của mô phỏng; hồi quy chéo dùng giá trị giao dịch khớp lệnh bình quân làm biến kiểm soát.</p>
 </section>
 
 <!-- 04 MÔ PHỎNG -->
@@ -672,7 +672,7 @@ const ECON={
   cliff:[['Dưới 15%',.1909,.0654],['Dưới 10%',.2315,.0680],['Dưới 5%',.2954,.0864],['Dưới 1%',.3776,.1288]],
   logit:{or:7.818,lo:2.871,hi:21.288,ape:.148,p:[.177,.024,.028],ev:44,n:1169,auc:.738},
   kw:97.33,
-  cs:[['Room còn lại','0,799','1,331','0,549','0,260','0,786','0,349'],['Tăng giá từ đầu năm','3,435','1,260','0,007','2,744','0,002','0,001']]
+  cs:[['Room còn lại','0,772','1,313','0,558','0,245','0,795','0,393'],['Tăng giá từ đầu năm','3,500','1,298','0,008','2,788','0,002','0,002']]
 };
 
 /* ---------- mô hình ---------- */
@@ -921,7 +921,7 @@ function drawP3(){
     ['H3','Quan hệ có dạng bậc thang: nhóm room 10% đến 30% cũng cao hơn.','Phần bù room tăng dần (Bailey và cộng sự, 1999)','Bảng dữ liệu M2',`β = ${fmt(ECON.m2n.b*100,1)} điểm, p = ${ECON.m2n.p}`,chip('no','Không ủng hộ: dạng ngưỡng')],
     ['H4','Quan hệ ở H2 vẫn đúng khi khử đặc điểm riêng của từng mã.','Nhận dạng trong mã (Wooldridge, 2010)','Hiệu ứng cố định mã và tháng M4',`β = ${fmt(ECON.m4.b*100,1)} điểm, p = ${ECON.m4.p}`,chip('mid','Chấp nhận, nguồn hẹp')],
     ['H5','Room cạn làm tăng xác suất một tháng do thỏa thuận chi phối.','Lựa chọn nhị phân (McFadden, 1974)','Logit, sai số chuẩn cụm',`Tỷ số chênh ${fmt(ECON.logit.or,2)}, tác động biên ${fmt(ECON.logit.ape*100,1)} điểm`,chip('ok','Chấp nhận')],
-    ['H6','Room không giải thích mức bán ròng xuyên mã, vì room chỉ chặn chiều mua.','Room là ràng buộc một chiều','OLS chéo, sai số chuẩn HC3','β room p = 0,549; 0,786; 0,349',chip('ok','Ủng hộ')],
+    ['H6','Room không giải thích mức bán ròng xuyên mã, vì room chỉ chặn chiều mua.','Room là ràng buộc một chiều','OLS chéo, sai số chuẩn HC3','β room p = 0,558; 0,795; 0,393',chip('ok','Ủng hộ')],
     ['H7','Ở thiết lập cơ sở, độ phủ dưới 100%; thanh khoản là nút thắt của đa số mã.','Đường cầu dốc xuống (Shleifer, 1986; Kyle, 1985)','Mô phỏng hấp thụ, tính trong trang',`Độ phủ ${pct(a.cov,1)}; nút thắt thanh khoản ${liqN} mã, room ${roomN} mã`,h7ok?chip('ok','Phù hợp'):chip('no','Không phù hợp')]];
   $('#hypTbl').innerHTML=`<thead><tr><th class="l">Mã</th><th class="l">Giả thuyết</th><th class="l">Cơ sở lý thuyết</th><th class="l">Phép kiểm</th><th class="l">Kết quả</th><th class="l">Kết luận</th></tr></thead><tbody>`+
     H.map(r=>`<tr><td class="l code">${r[0]}</td><td class="l w">${r[1]}</td><td class="l w" style="color:var(--ink-2)">${r[2]}</td><td class="l w">${r[3]}</td><td class="l" style="font-family:var(--mono);white-space:normal;min-width:150px">${r[4]}</td><td class="l">${r[5]}</td></tr>`).join('')+'</tbody>';
