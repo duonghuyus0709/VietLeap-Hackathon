@@ -2,19 +2,21 @@
 
 Dashboard tương tác trả lời câu hỏi: vì sao khối ngoại vẫn bán ròng dù Việt Nam được FTSE Russell nâng hạng, dòng vốn nghẽn ở đâu và nên nới đòn bẩy chính sách nào trước.
 
-Người ra quyết định: Ủy ban Chứng khoán Nhà nước, Bộ Tài chính. Giao diện bám phong cách hai dashboard mẫu trong handout của cuộc thi (Vietnam Land Brief và Viet Nam PFM benchmark): nền trắng, không có chế độ tối, năm panel chuyển bằng tab, mỗi panel mở đầu bằng đoạn dẫn có số in đậm, mỗi biểu đồ có dòng "Cách đọc", nguồn ở cuối panel.
+Người ra quyết định: Ủy ban Chứng khoán Nhà nước, Bộ Tài chính. Giao diện bám phong cách hai dashboard mẫu trong handout của cuộc thi (Vietnam Land Brief và Viet Nam PFM benchmark): nền trắng, không có chế độ tối, bốn panel chuyển bằng tab, mỗi panel mở đầu bằng đoạn dẫn có số in đậm, mỗi biểu đồ có dòng "Cách đọc", nguồn ở cuối panel.
 
 ## Mở sản phẩm
 Mở file `index.html` bằng trình duyệt. File tự chứa toàn bộ dữ liệu và mã. Chỉ phông chữ IBM Plex tải từ Google Fonts, nếu không có mạng trang vẫn chạy với phông thay thế.
 
 Để có đường link cho giám khảo, kéo thả thư mục này lên Netlify Drop hoặc đưa lên GitHub Pages. Trang chính là `index.html`.
 
-## Năm panel
-1. Nghịch lý: ròng khối ngoại HOSE theo tháng (khớp lệnh, thỏa thuận, chấm tổng ròng), so sánh bình quân trước, trong và sau tháng FTSE hiệu lực, xác suất kiểm định dấu, mã bán và mua nhiều nhất.
-2. Điểm nghẽn: tỷ trọng thỏa thuận theo room còn lại, biểu đồ phân tán 1.169 quan sát mã theo tháng (vạch ngưỡng FTSE 20%), kiểm chứng bằng danh mục FTSE thật, ca TCB.
-3. Kiểm định: bảy giả thuyết H1 đến H7 kèm cơ sở lý thuyết và kết luận (H1, H7 tính trong trang), biểu đồ hệ số room cạn qua 14 đặc tả, hệ số theo ngưỡng 15/10/5/1%, xác suất Logit, hồi quy chéo. Số liệu lấy từ báo cáo `docs/nghich_ly_nang_hang.html`.
-4. Mô phỏng: ba thanh trượt đòn bẩy, nhu cầu vốn và giới hạn hấp thụ, độ phủ cơ sở và sau đòn bẩy, xếp hạng đòn bẩy nên nới trước, nút thắt, mã bị bỏ lỡ nhiều nhất, bản đồ nhiệt H và p.
-5. Từng mã: danh sách xếp theo phần bỏ lỡ, chi tiết R, F, L và dòng vốn theo tháng, bảng đầy đủ có tải CSV, phương pháp và giới hạn.
+## Bốn panel
+Bố cục theo khung "From data to decision" của giám khảo (một màn hình cho mỗi câu trả lời; mức, so sánh, xu hướng, quyết định; câu khuyến nghị ở đầu trang). Một dải khuyến nghị cố định ở đầu mọi panel.
+1. Nghịch lý: câu dẫn có số, bốn ô số (mức, so với gì, xu hướng, kênh), ròng khối ngoại HOSE theo tháng, mã bán và mua nhiều nhất.
+2. Điểm nghẽn: tỷ trọng thỏa thuận theo ba nhóm room, hệ số theo ngưỡng, biểu đồ phân tán 1.169 quan sát, xếp hạng headroom ngày 30/6 so với ngưỡng FTSE 20%. Bên dưới: 14 đặc tả kiểm định, ca TCB, Logit, 8 mã bị FTSE loại.
+3. Quyết định: sơ đồ ba cửa của dòng vốn thụ động (vào rổ FTSE, còn room, đủ thanh khoản), bốn kịch bản (US$1,5 / 2,2 / 6 tỷ, rổ 27 mã FTSE), ba thanh trượt đòn bẩy, xếp hạng đòn bẩy và danh sách hành động theo mã. Bên dưới: bảng kịch bản, bản đồ nhiệt H và p, nút thắt.
+4. Tra cứu: từng mã (R, F, L, dòng vốn theo tháng), bảng đầy đủ tải CSV, bảy giả thuyết H1 đến H7, phương pháp và giới hạn.
+
+Khi thuyết trình: phím 1 đến 4 chuyển panel, phím P bật chế độ trình chiếu (ẩn phần chi tiết, chữ lớn hơn).
 
 ## Cấu trúc
 ```
