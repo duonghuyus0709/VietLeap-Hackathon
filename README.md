@@ -2,18 +2,19 @@
 
 Dashboard tương tác trả lời câu hỏi: vì sao khối ngoại vẫn bán ròng dù Việt Nam được FTSE Russell nâng hạng, dòng vốn nghẽn ở đâu và nên nới đòn bẩy chính sách nào trước.
 
-Người ra quyết định: Ủy ban Chứng khoán Nhà nước, Bộ Tài chính. Giao diện bám phong cách hai dashboard mẫu trong handout của cuộc thi (Vietnam Land Brief và Viet Nam PFM benchmark): nền trắng, không có chế độ tối, bốn panel chuyển bằng tab, mỗi panel mở đầu bằng đoạn dẫn có số in đậm, mỗi biểu đồ có dòng "Cách đọc", nguồn ở cuối panel.
+Người ra quyết định: Ủy ban Chứng khoán Nhà nước, Bộ Tài chính. Giao diện bám phong cách hai dashboard mẫu trong handout của cuộc thi (Vietnam Land Brief và Viet Nam PFM benchmark): nền trắng, không có chế độ tối, năm panel chuyển bằng tab, mỗi panel mở đầu bằng đoạn dẫn có số in đậm, mỗi biểu đồ có dòng "Cách đọc", nguồn ở cuối panel.
 
 ## Mở sản phẩm
 Mở file `index.html` bằng trình duyệt. File tự chứa toàn bộ dữ liệu và mã. Chỉ phông chữ IBM Plex tải từ Google Fonts, nếu không có mạng trang vẫn chạy với phông thay thế.
 
 Để có đường link cho giám khảo, kéo thả thư mục này lên Netlify Drop hoặc đưa lên GitHub Pages. Trang chính là `index.html`.
 
-## Bốn panel
-1. Nghịch lý: ròng khối ngoại theo tháng (khớp lệnh và thỏa thuận), mã bán và mua nhiều nhất.
-2. Điểm nghẽn: tỷ trọng thỏa thuận theo room còn lại, biểu đồ phân tán 1.169 quan sát mã theo tháng (có vạch ngưỡng FTSE 20%), thẻ kiểm chứng bằng danh mục FTSE thật (headroom ngày 30/6/2026 của 27 mã được chọn và các mã lớn bị loại, mức nới room cần thiết, vốn thụ động ước tính bị mất), ca TCB.
-3. Mô phỏng: ba thanh trượt đòn bẩy ở đầu cột trái (cố định khi cuộn), hai nhóm giả định có thể thu gọn. Chọn được rổ FTSE 27 mã thật hoặc N mã lớn nhất, và tổng vốn US$1,5 tỷ (thụ động, mặc định), US$2,2 tỷ hoặc US$6 tỷ (gồm cả quỹ chủ động). Cột phải có độ phủ cơ sở và sau đòn bẩy, bảng xếp hạng đòn bẩy nên nới trước, nút thắt, 12 mã bị bỏ lỡ nhiều nhất và độ nhạy theo H và p. Tất cả đổi theo thanh trượt.
-4. Từng mã: danh sách xếp theo phần bỏ lỡ, chi tiết R, F, L và dòng vốn theo tháng của mã đã chọn, bảng đầy đủ có tải CSV, ghi chú phương pháp và giới hạn.
+## Năm panel
+1. Nghịch lý: ròng khối ngoại HOSE theo tháng (khớp lệnh, thỏa thuận, chấm tổng ròng), so sánh bình quân trước, trong và sau tháng FTSE hiệu lực, xác suất kiểm định dấu, mã bán và mua nhiều nhất.
+2. Điểm nghẽn: tỷ trọng thỏa thuận theo room còn lại, biểu đồ phân tán 1.169 quan sát mã theo tháng (vạch ngưỡng FTSE 20%), kiểm chứng bằng danh mục FTSE thật, ca TCB.
+3. Kiểm định: bảy giả thuyết H1 đến H7 kèm cơ sở lý thuyết và kết luận (H1, H7 tính trong trang), biểu đồ hệ số room cạn qua 14 đặc tả, hệ số theo ngưỡng 15/10/5/1%, xác suất Logit, hồi quy chéo. Số liệu lấy từ báo cáo `docs/nghich_ly_nang_hang.html`.
+4. Mô phỏng: ba thanh trượt đòn bẩy, nhu cầu vốn và giới hạn hấp thụ, độ phủ cơ sở và sau đòn bẩy, xếp hạng đòn bẩy nên nới trước, nút thắt, mã bị bỏ lỡ nhiều nhất, bản đồ nhiệt H và p.
+5. Từng mã: danh sách xếp theo phần bỏ lỡ, chi tiết R, F, L và dòng vốn theo tháng, bảng đầy đủ có tải CSV, phương pháp và giới hạn.
 
 ## Cấu trúc
 ```
@@ -36,6 +37,7 @@ Mở file `index.html` bằng trình duyệt. File tự chứa toàn bộ dữ l
 │   ├── stage1_numbers.py       # giai đoạn 1 của prompt: tính và in các con số kiểm trước khi vẽ
 │   └── build_html.py           # nhúng data.json vào src/dashboard.src.html → index.html
 └── docs/
+    ├── nghich_ly_nang_hang.html  # báo cáo kinh tế lượng (R), nguồn của panel 03
     ├── prompt_dashboard.md     # prompt dựng dashboard (sáu phần ROLE, CONTEXT, TASK, DATA, OUTPUT, QUALITY CHECKS, năm giai đoạn)
     └── stage1_numbers.txt      # kết quả của scripts/stage1_numbers.py để đối chiếu
 ```

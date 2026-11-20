@@ -4,448 +4,632 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light">
+<meta name="theme-color" content="#ffffff">
 <title>Nghịch lý nâng hạng</title>
-<meta name="description" content="Dashboard chính sách: sau khi FTSE nâng hạng Việt Nam, dòng vốn ngoại nghẽn ở đâu và nên nới đòn bẩy nào trước. Dữ liệu thật từ FiinQuantX.">
+<meta name="description" content="Dashboard chính sách: sau khi FTSE nâng hạng Việt Nam, vì sao khối ngoại vẫn bán ròng, dòng vốn nghẽn ở đâu và nên nới đòn bẩy nào trước. Dữ liệu FiinQuantX chốt 19/11/2026.">
+<meta property="og:title" content="Nghịch lý nâng hạng">
+<meta property="og:description" content="Room ngoại, kênh thỏa thuận và khả năng hấp thụ dòng vốn thụ động FTSE trên thị trường chứng khoán Việt Nam.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:light;
-  --paper:#FFFFFF;--surface:#FFFFFF;--surface-2:#F6F7F6;--ink:#16211C;--ink-2:#46554E;--muted:#6B7A72;--rule:#D8DDD9;--rule-soft:#E8EBE8;
-  --s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--pos:#2a78d6;--neg:#d03b3b;--mid:#E7EAE6;--neu:#9DAAA2;--deal:#55665D;
-  --r4:#c0392b;--r3:#e07a3f;--r2:#dbb13f;--r1:#4f9e62;
-  --serif:"IBM Plex Serif",Georgia,serif;--sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  --bg:#FFFFFF;--surface:#FFFFFF;--surface-2:#F5F6F4;--surface-3:#ECEEEB;
+  --ink:#14201B;--ink-2:#44514B;--muted:#64716A;--rule:#D9DEDA;--rule-soft:#EBEDEA;
+  --liq:#2a78d6;--room:#eb6834;--float:#1baf7a;--match:#A7B1AB;--deal:#3B4A43;
+  --sell:#d03b3b;--buy:#2a78d6;--good:#0c7a0c;--good-bg:#E7F3E7;--warn-bg:#FCEFE7;--nil-bg:#EEF0ED;
+  --serif:"IBM Plex Serif",Georgia,serif;--sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --gut:24px;--max:1320px;--ease:cubic-bezier(.2,.7,.2,1)}
 *{box-sizing:border-box}
-html{scroll-padding-top:76px;background:#fff}
-body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
-a{color:inherit;text-decoration-color:var(--muted);text-underline-offset:2px}
-.wrap{max-width:1280px;margin:0 auto;padding:0 16px 24px}
-.top{position:sticky;top:0;z-index:40;background:var(--paper);border-bottom:1px solid var(--rule);padding-top:10px}
-.top-in{max-width:1280px;margin:0 auto;padding:0 16px;display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap}
-.brand h1{font-family:var(--serif);font-size:20px;font-weight:600;margin:0;letter-spacing:-.01em}
-.brand{flex:1 1 440px;min-width:0}
-.brand p{margin:1px 0 8px;font-size:12.5px;color:var(--ink-2);max-width:none}
-.tabs{display:flex;gap:2px;margin-bottom:-1px}
-.tabs button{appearance:none;border:1px solid transparent;border-bottom:0;background:none;color:var(--ink-2);font-family:var(--sans);font-size:13px;padding:9px 15px 10px;cursor:pointer;display:flex;align-items:baseline;gap:7px;line-height:1.2}
-.tabs button b{font-family:var(--mono);font-size:10px;color:var(--muted);font-weight:500}
+html{scroll-padding-top:120px;background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+a{color:inherit;text-decoration:underline;text-decoration-color:var(--rule);text-underline-offset:3px;transition:text-decoration-color .15s}
+a:hover{text-decoration-color:var(--ink)}
+:focus-visible{outline:2px solid var(--liq);outline-offset:2px}
+.skip{position:absolute;left:-9999px;top:8px;z-index:100;background:var(--ink);color:#fff;padding:10px 14px;text-decoration:none}
+.skip:focus{left:8px}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ---------- đầu trang ---------- */
+.top{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.96);backdrop-filter:saturate(1.2) blur(6px);border-bottom:1px solid var(--rule)}
+.top-in{max-width:var(--max);margin:0 auto;padding:14px var(--gut) 0;display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:32px;align-items:end}
+.brand{padding-bottom:12px;min-width:0}
+.brand .k{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap}
+.brand .k b{color:var(--room);font-weight:600}
+.brand h1{font-family:var(--serif);font-size:22px;font-weight:600;margin:2px 0 0;letter-spacing:-.01em;line-height:1.2}
+.tabs{display:flex;gap:4px;align-self:end}
+.tabs button{appearance:none;border:0;background:none;color:var(--ink-2);font:500 13.5px/1.2 var(--sans);padding:12px 12px 14px;min-height:44px;cursor:pointer;display:flex;align-items:baseline;gap:7px;position:relative;white-space:nowrap;transition:color .15s}
+.tabs button b{font-family:var(--mono);font-size:11px;color:var(--muted);font-weight:500;transition:color .15s}
+.tabs button::after{content:"";position:absolute;left:12px;right:12px;bottom:-1px;height:2px;background:var(--ink);transform:scaleX(0);transform-origin:left;transition:transform .2s var(--ease)}
 .tabs button:hover{color:var(--ink)}
-.tabs button:focus-visible{outline:2px solid var(--s1);outline-offset:-2px}
-.tabs button[aria-selected="true"]{background:var(--surface);border-color:var(--rule);color:var(--ink);font-weight:600;position:relative}
-.tabs button[aria-selected="true"]::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:var(--surface)}
-.tabs button[aria-selected="true"] b{color:var(--s2)}
-@media (max-width:860px){.tabs{width:100%;overflow-x:auto}.tabs button{white-space:nowrap}}
-@media (max-width:620px){.brand p{display:none}.brand h1{margin-bottom:10px}.tabs{overflow-x:visible}.tabs button{padding:8px 9px 9px;font-size:12.5px}.tabs button b{display:none}}
-.panel{padding-top:20px}
+.tabs button:hover::after{transform:scaleX(.35);background:var(--rule)}
+.tabs button[aria-selected="true"]{color:var(--ink);font-weight:600}
+.tabs button[aria-selected="true"] b{color:var(--room)}
+.tabs button[aria-selected="true"]::after{transform:scaleX(1);background:var(--ink)}
+.tabs button:focus-visible{outline-offset:-4px}
+
+/* ---------- khung panel ---------- */
+main{max-width:var(--max);margin:0 auto;padding:0 var(--gut) 40px}
+.panel{padding-top:32px}
 .panel[hidden]{display:none}
-.lede{font-size:14.5px;color:var(--ink-2);max-width:92ch;margin:0 0 16px;line-height:1.55}
+.phead{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.62fr);gap:12px 48px;align-items:end;margin-bottom:24px}
+.phead h2{font-family:var(--serif);font-size:30px;line-height:1.18;font-weight:600;letter-spacing:-.015em;margin:0;max-width:30ch;text-wrap:balance}
+.kick{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;grid-column:1/-1}
+.kick b{color:var(--room);font-weight:600;margin-right:6px}
+.lede{font-size:15px;color:var(--ink-2);margin:0;line-height:1.6;max-width:62ch}
 .lede b{color:var(--ink);font-weight:600}
-.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin-bottom:16px}
-.stat{background:var(--surface);padding:11px 14px 10px;display:flex;flex-direction:column;gap:3px}
-.stat-k{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-.stat-v{font-family:var(--mono);font-weight:600;font-size:22px;line-height:1.05;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-.stat-v .u{font-size:12px;font-weight:500;color:var(--ink-2);margin-left:3px;letter-spacing:0}
-.stat-n{font-size:11.5px;color:var(--ink-2);line-height:1.38}
-@media (max-width:860px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.grid{display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule)}
-.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
-.mt{margin-top:16px}
-.card{background:var(--surface);padding:13px 15px 12px;min-width:0}
-.card h3{font-family:var(--serif);font-size:15.5px;font-weight:600;margin:0}
-.card .sub{font-size:11.5px;color:var(--muted);margin:2px 0 9px;line-height:1.4}
-.read{font-size:11.5px;color:var(--ink-2);margin:8px 0 0;line-height:1.45;border-top:1px solid var(--rule-soft);padding-top:7px}
-.read b{font-family:var(--mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-right:5px}
-.src{font-size:11px;color:var(--muted);margin:14px 0 0;line-height:1.5;max-width:110ch}
-.src b{font-family:var(--mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;font-weight:500;margin-right:5px}
-@media (max-width:860px){.g2{grid-template-columns:minmax(0,1fr)}}
-svg{display:block;width:100%;height:auto;overflow:visible}
-svg text{font-family:var(--mono);font-size:9.5px;fill:var(--muted)}
-svg text.ink{font-family:var(--sans);font-size:10.5px;fill:var(--ink)}
-svg .gl{stroke:var(--rule-soft);stroke-width:1}
-svg .ax{stroke:var(--rule);stroke-width:1}
-svg .hit{fill:transparent}
-.f-neu{fill:var(--neu)}.f-deal{fill:var(--deal)}
-.c-neu{background:var(--neu)}.c-deal{background:var(--deal)}.c-liq{background:var(--s1)}.c-room{background:var(--s2)}.c-float{background:var(--s3)}
-.key{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11px;color:var(--ink-2);margin:0 0 6px}
-.key span{display:flex;align-items:center;gap:5px}
-.sw{display:inline-block;width:10px;height:10px;border-radius:2px;flex:0 0 auto;vertical-align:-1px;margin-right:4px}
+
+/* ---------- ô số ---------- */
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:2px solid var(--ink);border-bottom:1px solid var(--rule);margin-bottom:28px}
+.stat{padding:14px 20px 16px 0;display:flex;flex-direction:column;gap:4px;min-width:0}
+.stat+.stat{padding-left:20px;border-left:1px solid var(--rule)}
+.stat-k{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.stat-v{font-family:var(--mono);font-weight:600;font-size:30px;line-height:1.05;font-variant-numeric:tabular-nums;letter-spacing:-.03em;color:var(--ink)}
+.stat-v .u{font-size:13px;font-weight:500;color:var(--ink-2);margin-left:5px;letter-spacing:0}
+.stat-n{font-size:12.5px;color:var(--ink-2);line-height:1.45}
+
+/* ---------- lưới và thẻ ---------- */
+.row{display:grid;gap:24px;margin-bottom:24px}
+.r2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.r73{grid-template-columns:minmax(0,1.55fr) minmax(0,1fr)}
+.card{border:1px solid var(--rule);background:var(--surface);padding:18px 20px 16px;min-width:0;display:flex;flex-direction:column}
+.card>h3,.ch{font-family:var(--serif);font-size:17px;font-weight:600;margin:0;line-height:1.3;letter-spacing:-.005em}
+.sub{font-size:12.5px;color:var(--muted);margin:4px 0 14px;line-height:1.45}
+.read{font-size:12.5px;color:var(--ink-2);margin:14px 0 0;line-height:1.55;border-top:1px solid var(--rule-soft);padding-top:10px}
+.read b.rl{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-right:6px}
+.grow{flex:1 1 auto}
+.src{font-size:12px;color:var(--muted);margin:8px 0 0;line-height:1.6;border-top:1px solid var(--rule);padding-top:12px}
+.src b{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:500;margin-right:6px;color:var(--ink-2)}
+
+/* ---------- chú giải ---------- */
+.key{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12px;color:var(--ink-2);margin:0 0 8px}
+.key span{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;flex:0 0 auto;vertical-align:-1px;margin-right:5px}
+.key .sw{margin-right:0}
 .sw.c{border-radius:50%}
 .sw.t{border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%)}
-.key .sw{margin-right:0}
-details{margin-top:8px;font-size:12px}
-summary{cursor:pointer;color:var(--ink-2)}
-summary:focus-visible{outline:2px solid var(--s1)}
-.tbl-wrap{overflow:auto;border:1px solid var(--rule);max-height:520px;background:var(--surface)}
-table{border-collapse:collapse;width:100%;font-size:11.5px}
-th{position:sticky;top:0;background:var(--surface-2);font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;padding:7px 9px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--rule)}
-#tbl th{cursor:pointer}
-td{padding:5px 9px;text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;border-bottom:1px solid var(--rule-soft);white-space:nowrap}
+.sw.ln{height:2px;width:14px;border-radius:1px;vertical-align:3px}
+.sw.ring{background:#fff!important;border:2px solid var(--ink);border-radius:50%}
+.c-match{background:var(--match)}.c-deal{background:var(--deal)}.c-liq{background:var(--liq)}.c-room{background:var(--room)}.c-float{background:var(--float)}.c-oth{background:#C4CCC7}.c-sell{background:var(--sell)}.c-buy{background:var(--buy)}
+
+/* ---------- svg ---------- */
+.chart{position:relative}
+svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{font-family:var(--mono);font-size:11px;fill:var(--muted)}
+svg text.ink{font-family:var(--sans);font-size:12px;fill:var(--ink)}
+svg text.lab{font-family:var(--sans);font-size:12px;fill:var(--ink-2)}
+svg .gl{stroke:var(--rule-soft);stroke-width:1}
+svg .ax{stroke:var(--ink-2);stroke-width:1}
+svg .hit{fill:transparent;transition:fill .12s}
+svg .hit:hover{fill:rgba(20,32,27,.045)}
+.f-match{fill:var(--match)}.f-deal{fill:var(--deal)}
+svg [data-tip]{cursor:default}
+
+/* ---------- bảng ---------- */
+details.tv{margin-top:10px;font-size:12.5px}
+details.tv summary{cursor:pointer;color:var(--ink-2);display:inline-flex;align-items:center;gap:6px;min-height:32px}
+details.tv summary:hover{color:var(--ink)}
+.tbl-wrap{overflow:auto;border:1px solid var(--rule);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th{position:sticky;top:0;background:var(--surface-2);font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:500;padding:8px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--rule)}
+td{padding:7px 10px;text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;border-bottom:1px solid var(--rule-soft);white-space:nowrap}
 th.l,td.l{text-align:left}
 td.l{font-family:var(--sans)}
+td.w{white-space:normal;min-width:180px}
+tbody tr{transition:background .12s}
 tbody tr:hover{background:var(--surface-2)}
-#tbl tbody tr{cursor:pointer}
-.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 8px}
-input[type=search],input[type=number],select{font-family:var(--sans);font-size:12px;padding:5px 7px;background:var(--surface-2);color:var(--ink);border:1px solid var(--rule);border-radius:2px}
-input[type=search]{min-width:180px}
-.btn{appearance:none;font-family:var(--sans);font-size:12px;padding:5px 11px;background:var(--surface-2);color:var(--ink);border:1px solid var(--rule);border-radius:2px;cursor:pointer}
-.btn:hover{border-color:var(--ink-2)}
-.btn:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--s1);outline-offset:1px}
-.small{font-size:11.5px;color:var(--muted)}
-/* thanh ngang */
-.bar-row{display:grid;grid-template-columns:minmax(110px,38%) 1fr;gap:10px;align-items:center;padding:4px 0;font-size:12px}
-.bar-row .small{display:block;margin-top:1px;font-size:10.5px}
-.trk{position:relative;display:flex;align-items:center;height:18px;min-width:0}
-.fill{display:block;height:12px;border-radius:0 4px 4px 0;min-width:2px;flex:0 0 auto}
-.trk .v{font-family:var(--mono);font-size:11px;margin-left:7px;white-space:nowrap;font-variant-numeric:tabular-nums}
-.mv{display:grid;grid-template-columns:44px 1fr 58px;gap:8px;align-items:center;font-size:11.5px;padding:2px 0;cursor:default}
-.mv .t{font-family:var(--mono);font-weight:600;font-size:11px}
-.mvt{position:relative;height:12px}
-.mvt i{position:absolute;top:0;bottom:0;display:block}
-.mvt .z{position:absolute;top:-3px;bottom:-3px;width:1px;background:var(--ink-2)}
-.mv .v{font-family:var(--mono);font-size:10.5px;text-align:right;font-variant-numeric:tabular-nums}
-.grp{font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);margin:12px 0 5px;font-weight:500;border-top:1px solid var(--rule-soft);padding-top:8px}
-.grp:first-child{border-top:0;padding-top:0;margin-top:0}
-/* mô phỏng */
-.scenwrap{display:grid;grid-template-columns:minmax(0,330px) minmax(0,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule)}
-.pars{background:var(--surface);padding:13px 15px;min-width:0}
-.eq-id{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;font-size:14px;color:var(--ink);font-weight:600;border-bottom:1px solid var(--rule);padding-bottom:6px;margin-bottom:7px}
-.eq-id span{font-size:10.5px;font-weight:400;color:var(--muted)}
-.eq{background:var(--surface-2);border-left:3px solid var(--s2);padding:9px 12px;font-family:var(--mono);font-size:11.5px;line-height:1.85;color:var(--ink);margin:0 0 11px;overflow-x:auto}
-.eq .cmt{color:var(--muted);font-size:10.5px}
-.field{margin-bottom:9px}
-.field label,.lb{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:12px;color:var(--ink-2);margin-bottom:3px}
-.fv{font-family:var(--mono);font-size:11.5px;color:var(--ink);font-weight:600}
-.field input[type=range]{width:100%;accent-color:var(--s1);margin:0}
-.field input[type=number]{width:100%}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.seg{display:flex;gap:1px;background:var(--rule);border:1px solid var(--rule)}
-.seg button{flex:1;appearance:none;border:0;background:var(--surface-2);color:var(--ink-2);font-family:var(--mono);font-size:11px;padding:5px 2px;cursor:pointer}
-.seg button:hover{background:var(--mid)}
-.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper);font-weight:600}
-.seg button:focus-visible{outline:2px solid var(--s1);outline-offset:-2px}
-.hint{font-size:10.5px;color:var(--muted);margin:2px 0 0;line-height:1.35}
-.fixed{display:flex;flex-wrap:wrap;gap:3px 16px;font-size:11px;color:var(--muted);border-top:1px solid var(--rule-soft);margin-top:12px;padding-top:9px}
-.fixed b{font-family:var(--mono);color:var(--ink-2);font-weight:500}
-.out{background:var(--surface);padding:13px 15px;min-width:0}
-.chain{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 11px}
-.chain .st{display:flex;flex-direction:column;background:var(--surface-2);border:1px solid var(--rule);padding:6px 11px;border-radius:2px;min-width:0}
-.chain .st b{font-family:var(--mono);font-size:17px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
-.chain .st span{font-size:10.5px;color:var(--ink-2);line-height:1.3}
-.chain .ar{color:var(--muted);font-size:15px}
-.verdict{font-size:12.5px;line-height:1.55;color:var(--ink-2);background:var(--surface-2);border-left:3px solid var(--s1);padding:9px 12px;margin:0 0 12px}
-.verdict.hot{border-left-color:var(--r4)}
-.verdict p{margin:0 0 6px}.verdict p:last-child{margin:0}
-.verdict b{color:var(--ink);font-weight:600}
-.quad{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px}
-.quad .qt{font-size:12px;color:var(--ink);font-weight:600;margin:0}
-.quad .qs{font-size:10.5px;color:var(--muted);margin:1px 0 6px;line-height:1.3}
-.seg-bar{display:flex;height:16px;border:1px solid var(--rule);margin:2px 0 7px}
-.seg-bar i{display:block;height:100%;border-right:2px solid var(--surface)}
-.seg-bar i:last-child{border-right:0}
-.rows div{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;padding:2px 0}
-.rows b{font-family:var(--mono);font-weight:500;font-size:11px}
-.gaprow{display:grid;grid-template-columns:40px 1fr;gap:6px;align-items:center;font-size:11px;padding:1px 3px;cursor:pointer;border-radius:2px}
-.gaprow:hover{background:var(--surface-2)}
-.gaprow .t{font-family:var(--mono);font-weight:600;font-size:10.5px}
-.cmp{margin-top:16px;border-top:1px solid var(--rule);padding-top:11px}
-.cmp h4,.pick h4{font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);margin:0 0 7px;font-weight:500}
-.cmpgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:18px}
-.cmp table{font-size:11.5px}
-.cmp th{position:static}
-.heat{display:grid;gap:2px;font-family:var(--mono);font-size:11px}
-.heat div{padding:5px 2px;text-align:center;font-variant-numeric:tabular-nums}
-.heat .h{color:var(--muted);font-size:9.5px;padding:5px 2px}
-@media (max-width:1040px){.scenwrap{grid-template-columns:minmax(0,1fr)}.cmpgrid{grid-template-columns:minmax(0,1fr)}}
-@media (max-width:620px){.quad{grid-template-columns:minmax(0,1fr)}}
-/* từng mã */
-.maprow{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule)}
-.side{background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;min-width:0}
-.side h4{font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;font-weight:500}
-.side input[type=search]{width:100%;margin-bottom:8px}
-.rank{position:relative;overflow-y:auto;flex:1 1 auto;min-height:260px;max-height:600px;margin:0 -4px;padding:0 4px}
-.lrow{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;padding:2px 4px;cursor:pointer;border-radius:2px}
-.lrow:hover{background:var(--surface-2)}
-.lrow.sel{background:var(--mid)}
-.lrow .i{font-family:var(--mono);font-size:9.5px;color:var(--muted);text-align:right}
-.lrow .nm{font-size:11.5px;display:block;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.lrow .nm small{color:var(--muted);font-size:10.5px}
-.lrow .barbg{display:block;height:5px;background:var(--rule-soft);border-radius:2px;position:relative;margin-top:2px}
-.lrow .barbg span{position:absolute;left:0;top:0;bottom:0;border-radius:2px}
-.lrow .v{font-family:var(--mono);font-size:10.5px;font-variant-numeric:tabular-nums}
-.detail{background:var(--surface);padding:13px 15px;min-width:0}
-.detail h3{font-family:var(--serif);font-size:17px;font-weight:600;margin:0}
-.detail .sub{font-size:11.5px;color:var(--ink-2);margin:3px 0 10px;line-height:1.5}
-.dgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px;margin-top:12px}
-.dgrid h5{font-size:11.5px;font-weight:600;margin:0 0 4px}
-.tag{display:inline-flex;align-items:center;font-size:11.5px}
-.notes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:16px}
-.notes ul{margin:6px 0 10px;padding-left:18px;font-size:12px;color:var(--ink-2)}
-.notes li{margin:0 0 4px}
-.notes p{font-size:12px;color:var(--ink-2);margin:4px 0}
-@media (max-width:1040px){.maprow{grid-template-columns:minmax(0,1fr)}.rank{max-height:380px}.notes{grid-template-columns:minmax(0,1fr)}}
-@media (max-width:620px){.dgrid{grid-template-columns:minmax(0,1fr)}}
-footer{max-width:1280px;margin:0 auto;padding:6px 16px 36px;font-size:11.5px;color:var(--muted);line-height:1.55}
-footer p{margin:4px 0;max-width:110ch}
-#tip{position:fixed;z-index:60;display:none;pointer-events:none;background:var(--ink);color:var(--paper);font-size:11.5px;padding:6px 9px;border-radius:2px;max-width:300px;white-space:pre-line;line-height:1.45}
-.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+tr.tot td{border-top:1px solid var(--rule);font-weight:600;background:var(--surface-2)}
 
-/* thiết kế lại v3: nền trắng, số chính, xếp hạng */
-#reset{margin-top:12px}
-.scenwrap{background:var(--surface);gap:0}
-.out{border-left:1px solid var(--rule)}
-.hero-n{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
-.hn{display:flex;flex-direction:column;gap:3px}
-.hn span{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-.hn b{font-family:var(--mono);font-size:34px;font-weight:600;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:var(--ink-2)}
-.hn.hi b{color:var(--ink)}
-.hn em{font-style:normal;font-family:var(--mono);font-size:11.5px;color:var(--ink-2)}
-.hero-n .ar{font-size:22px;color:var(--muted);padding-bottom:6px}
-.hero-n .hm{margin-left:auto;font-size:11.5px;color:var(--ink-2);line-height:1.5;text-align:right}
-.hero-n .hm b{font-family:var(--mono);font-weight:500;color:var(--ink)}
-.hbar{display:flex;height:14px;border:1px solid var(--rule);margin-top:10px;background:var(--surface-2)}
-.hbar i{display:block;height:100%}
-.hbar .b{background:var(--neu)}
-.hbar .a{background:var(--ink)}
-.hscale{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9.5px;color:var(--muted);margin:3px 0 12px}
-.vh{font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);margin:0 0 4px}
-.rk{display:grid;grid-template-columns:20px minmax(0,1fr) minmax(110px,170px);gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--rule)}
-.rk .n{font-family:var(--mono);font-weight:600;font-size:14px;color:var(--muted)}
-.rk .rt b{display:block;font-size:12.5px;color:var(--ink);font-weight:600}
-.rk .rt span{display:block;font-size:11px;color:var(--ink-2);line-height:1.4;margin-top:1px}
-.rk .bar{height:10px;background:var(--rule-soft)}
-.rk .bar i{display:block;height:100%}
-.rk .v{display:block;font-family:var(--mono);font-size:11.5px;margin-top:3px;font-weight:500;color:var(--ink)}
-.verdict .vall{margin:6px 0 8px;padding-top:7px;border-top:1px solid var(--rule)}
-.verdict .vn{font-size:12px;color:var(--ink-2)}
-.adv{border-top:1px solid var(--rule-soft);margin-top:10px;padding-top:9px}
-.adv summary{cursor:pointer;list-style:none;display:flex;align-items:baseline;gap:6px;font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-bottom:7px}
+/* ---------- điều khiển ---------- */
+input[type=search],input[type=number],select{font:13px var(--sans);padding:8px 10px;min-height:38px;background:var(--surface);color:var(--ink);border:1px solid var(--rule);border-radius:3px;transition:border-color .15s}
+input[type=search]:hover,input[type=number]:hover,select:hover{border-color:var(--muted)}
+.btn{appearance:none;font:500 13px var(--sans);padding:9px 14px;min-height:38px;background:var(--surface);color:var(--ink);border:1px solid var(--ink-2);border-radius:3px;cursor:pointer;transition:background .15s,transform .08s,border-color .15s}
+.btn:hover{background:var(--surface-2);border-color:var(--ink)}
+.btn:active{transform:translateY(1px)}
+.btn.pri{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn.pri:hover{background:#26342D}
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 12px}
+.small{font-size:12px;color:var(--muted)}
+
+/* thanh ngang */
+.bar-row{display:grid;grid-template-columns:minmax(120px,36%) 1fr;gap:12px;align-items:center;padding:7px 0;font-size:13px;border-top:1px solid var(--rule-soft)}
+.bar-row:first-child{border-top:0}
+.bar-row .small{display:block;margin-top:1px}
+.trk{position:relative;display:flex;align-items:center;height:20px;min-width:0}
+.fill{display:block;height:12px;border-radius:0 3px 3px 0;min-width:2px;flex:0 0 auto;transition:width .25s var(--ease)}
+.trk .v{font-family:var(--mono);font-size:12px;margin-left:8px;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink)}
+.trk .small{margin-left:6px;font-size:11.5px}
+.mv{display:grid;grid-template-columns:44px 1fr 56px;gap:10px;align-items:center;font-size:12px;padding:3px 0;border-radius:2px}
+.mv:hover{background:var(--surface-2)}
+.mv .t{font-family:var(--mono);font-weight:600;font-size:12px}
+.mvt{position:relative;height:12px}
+.mvt i{position:absolute;top:0;bottom:0;display:block;border-radius:2px}
+.mvt .z{position:absolute;top:-4px;bottom:-4px;width:1px;background:var(--ink-2)}
+.mv .v{font-family:var(--mono);font-size:12px;text-align:right;font-variant-numeric:tabular-nums}
+.grp{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px;font-weight:500}
+.grp:first-child{margin-top:0}
+
+/* so sánh giai đoạn */
+.periods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--rule);margin-top:14px}
+.per{padding:12px 14px 2px 0}
+.per+.per{padding-left:14px;border-left:1px solid var(--rule-soft)}
+.per h4{font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 4px}
+.per .big{font:600 20px var(--mono);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.per .big small{font-size:11.5px;font-weight:500;color:var(--ink-2);margin-left:4px;letter-spacing:0}
+.per p{font-size:12px;color:var(--ink-2);margin:2px 0 0;line-height:1.45}
+
+/* hộp kết luận */
+.note{font-size:13px;line-height:1.6;color:var(--ink-2);background:var(--surface-2);border-left:3px solid var(--room);padding:12px 14px;margin:14px 0 0}
+.note p{margin:0 0 6px}.note p:last-child{margin:0}
+.note b{color:var(--ink);font-weight:600}
+.note.blue{border-left-color:var(--liq)}
+
+/* ---------- kiểm định ---------- */
+.hyp{width:100%}
+.hyp td{vertical-align:top;padding:11px 10px}
+.hyp td.code{font:600 13px var(--mono);color:var(--ink);width:44px}
+.chip{display:inline-flex;align-items:center;gap:6px;font:500 12px var(--sans);padding:3px 9px 3px 7px;border-radius:99px;white-space:nowrap}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.chip.ok{background:var(--good-bg);color:var(--good)}
+.chip.no{background:var(--nil-bg);color:var(--ink-2)}
+.chip.mid{background:var(--warn-bg);color:#9a3c12}
+.mini{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border-top:1px solid var(--rule);margin-top:12px}
+.mini>div{padding:10px 12px 0 0}
+.mini>div+div{padding-left:12px;border-left:1px solid var(--rule-soft)}
+.mini span{display:block;font:500 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.mini b{display:block;font:600 19px var(--mono);letter-spacing:-.02em;margin-top:2px;font-variant-numeric:tabular-nums}
+.mini em{display:block;font-style:normal;font-size:11.5px;color:var(--ink-2);margin-top:1px}
+
+/* ---------- mô phỏng ---------- */
+.scenwrap{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);border:1px solid var(--rule);background:var(--surface-2)}
+.pars{background:var(--surface-2);padding:18px 20px;min-width:0;border-right:1px solid var(--rule)}
+.out{background:var(--surface);padding:20px 24px;min-width:0}
+.pgrp{font:600 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink);margin:0 0 12px}
+.field{margin-bottom:14px}
+.field label,.lb{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:12.5px;color:var(--ink-2);margin-bottom:5px}
+.fv{font-family:var(--mono);font-size:12.5px;color:var(--ink);font-weight:600;white-space:nowrap}
+input[type=range]{width:100%;margin:0;height:24px;accent-color:var(--ink);cursor:pointer}
+.field input[type=number]{width:100%}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg{display:flex;border:1px solid var(--rule);border-radius:3px;overflow:hidden;background:var(--surface)}
+.seg button{flex:1;appearance:none;border:0;border-left:1px solid var(--rule);background:var(--surface);color:var(--ink-2);font:500 12px var(--mono);padding:8px 2px;min-height:36px;cursor:pointer;transition:background .12s,color .12s}
+.seg button:first-child{border-left:0}
+.seg button:hover{background:var(--surface-3);color:var(--ink)}
+.seg button:active{transform:translateY(1px)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#fff;font-weight:600}
+.seg button:focus-visible{outline-offset:-3px}
+.hint{font-size:11.5px;color:var(--muted);margin:6px 0 0;line-height:1.45}
+.adv{border-top:1px solid var(--rule);padding-top:12px;margin-top:4px}
+.adv summary{cursor:pointer;list-style:none;display:flex;align-items:baseline;gap:8px;font:600 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink);min-height:30px}
 .adv summary::-webkit-details-marker{display:none}
-.adv summary::before{content:"+";width:10px}
+.adv summary::before{content:"+";width:10px;color:var(--muted)}
 .adv[open] summary::before{content:"\2212"}
-.adv summary .sm{margin-left:auto;text-transform:none;letter-spacing:0;color:var(--ink-2);font-size:10.5px}
-.adv summary:focus-visible{outline:2px solid var(--s1);outline-offset:3px}
-.adv:not([open]) summary{margin-bottom:0}
+.adv summary .sm{margin-left:auto;text-transform:none;letter-spacing:0;color:var(--ink-2);font-weight:400;font-size:11.5px}
+.adv[open] summary{margin-bottom:10px}
+.eq{background:var(--surface);border:1px solid var(--rule);padding:10px 12px;font:12px/1.9 var(--mono);color:var(--ink);margin:0 0 12px;overflow-x:auto}
+.eq .cmt{color:var(--muted)}
+.fixed{font-size:11.5px;color:var(--muted);border-top:1px solid var(--rule);margin-top:14px;padding-top:10px;line-height:1.6}
+.fixed b{font-family:var(--mono);color:var(--ink-2);font-weight:500}
+.hero-n{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
+.hn{display:flex;flex-direction:column;gap:4px}
+.hn span{font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.hn b{font:600 44px/1 var(--mono);letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.hn.hi b{color:var(--ink)}
+.hn em{font-style:normal;font:500 12.5px var(--mono);color:var(--good)}
+.hero-n .ar{font-size:24px;color:var(--muted);padding-bottom:8px}
+.hero-n .hm{margin-left:auto;font-size:12.5px;color:var(--ink-2);line-height:1.6;text-align:right}
+.hero-n .hm b{font-family:var(--mono);font-weight:600;color:var(--ink)}
+.hbar{display:flex;height:12px;margin-top:14px;background:var(--surface-3);border-radius:2px;overflow:hidden}
+.hbar i{display:block;height:100%;transition:width .3s var(--ease)}
+.hbar .b{background:var(--match)}
+.hbar .a{background:var(--ink)}
+.hscale{display:flex;justify-content:space-between;font:11px var(--mono);color:var(--muted);margin:5px 0 18px}
+.vh{font:600 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink);margin:0 0 6px}
+.verdict{border-top:2px solid var(--ink);padding-top:12px;margin:0 0 20px}
+.verdict p{margin:0 0 6px;font-size:13px;line-height:1.6;color:var(--ink-2)}
+.verdict b{color:var(--ink);font-weight:600}
+.rk{display:grid;grid-template-columns:24px minmax(0,1fr) minmax(120px,190px);gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--rule-soft)}
+.rk .n{font:600 16px var(--mono);color:var(--muted)}
+.rk:first-of-type .n{color:var(--ink)}
+.rk .rt b{display:block;font-size:13.5px;color:var(--ink);font-weight:600}
+.rk .rt span{display:block;font-size:12px;color:var(--ink-2);line-height:1.45;margin-top:2px}
+.rk .bar{height:10px;background:var(--surface-3);border-radius:2px;overflow:hidden}
+.rk .bar i{display:block;height:100%;transition:width .25s var(--ease)}
+.rk .v{display:block;font:600 12.5px var(--mono);margin-top:4px;color:var(--ink)}
+.vall{margin:10px 0 8px!important}
+.quad{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 28px;border-top:1px solid var(--rule);padding-top:16px}
+.quad .qt{font-size:13.5px;color:var(--ink);font-weight:600;margin:0}
+.quad .qs{font-size:12px;color:var(--muted);margin:2px 0 8px;line-height:1.45}
 .quad>div:nth-child(3){grid-column:2;grid-row:1/span 2}
-@media (min-width:1041px){.pars{position:sticky;top:84px;align-self:start;max-height:calc(100vh - 98px);overflow:auto;border-right:0}}
-@media (max-width:1040px){.out{border-left:0;border-top:1px solid var(--rule)}}
-@media (max-width:620px){.quad>div:nth-child(3){grid-column:auto;grid-row:auto}.rk{grid-template-columns:18px minmax(0,1fr)}.rk .rv{grid-column:2}.hero-n .hm{margin-left:0;text-align:left;width:100%}.hn b{font-size:28px}}
-.c-oth{background:#BFC8C2}
+.seg-bar{display:flex;height:16px;margin:2px 0 8px;gap:2px}
+.seg-bar i{display:block;height:100%;transition:width .25s var(--ease)}
+.seg-bar i:first-child{border-radius:2px 0 0 2px}.seg-bar i:last-child{border-radius:0 2px 2px 0}
+.rows div{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:3px 0;border-bottom:1px solid var(--rule-soft)}
+.rows div:last-child{border-bottom:0;font-weight:600}
+.rows b{font-family:var(--mono);font-weight:500;font-size:12px}
+.gaprow{display:grid;grid-template-columns:44px 1fr;gap:8px;align-items:center;font-size:12px;padding:3px 4px;margin:0 -4px;cursor:pointer;border-radius:2px;transition:background .12s}
+.gaprow:hover{background:var(--surface-2)}
+.gaprow:hover .t{text-decoration:underline}
+.gaprow .t{font:600 12px var(--mono)}
+.cmp{margin-top:24px;border-top:1px solid var(--rule);padding-top:16px;display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.25fr);gap:28px}
+.cmp h4{font:600 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink);margin:0 0 10px}
+.cmp th{position:static}
+.cmp th,.cmp td{padding:7px 8px}
+.heat{display:grid;gap:2px;font:12px var(--mono)}
+.heat div{padding:8px 2px;text-align:center;font-variant-numeric:tabular-nums;border-radius:2px}
+.heat .h{color:var(--muted);font-size:11px;padding:6px 2px}
+
+/* ---------- từng mã ---------- */
+.maprow{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);border:1px solid var(--rule);background:var(--surface-2)}
+.detail{background:var(--surface)}
+.side{background:var(--surface-2);padding:16px 16px;display:flex;flex-direction:column;min-width:0;border-right:1px solid var(--rule)}
+.side input[type=search]{width:100%;margin-bottom:10px}
+.rank{position:relative;overflow-y:auto;flex:1 1 auto;min-height:260px;max-height:640px;margin:0 -6px;padding:0 6px}
+.lrow{display:grid;grid-template-columns:24px 1fr auto;gap:8px;align-items:center;padding:6px 6px;cursor:pointer;border-radius:3px;transition:background .12s;border:0;background:none;width:100%;text-align:left;font:inherit;color:inherit}
+.lrow:hover{background:var(--surface-3)}
+.lrow.sel{background:var(--ink);color:#fff}
+.lrow.sel .i,.lrow.sel small{color:rgba(255,255,255,.7)}
+.lrow .i{font:11px var(--mono);color:var(--muted);text-align:right}
+.lrow .nm{font-size:12.5px;display:block;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lrow .nm small{color:var(--muted);font-size:11.5px}
+.lrow .barbg{display:block;height:4px;background:var(--rule);border-radius:2px;position:relative;margin-top:4px}
+.lrow .barbg span{position:absolute;left:0;top:0;bottom:0;border-radius:2px}
+.lrow .v{font:12px var(--mono);font-variant-numeric:tabular-nums}
+.detail{padding:18px 24px;min-width:0}
+.detail h3{font-family:var(--serif);font-size:22px;font-weight:600;margin:0;letter-spacing:-.01em}
+.detail .sub{font-size:13px;color:var(--ink-2)}
+.dgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 28px;margin-top:18px;border-top:1px solid var(--rule);padding-top:16px}
+.dgrid h5{font-size:13px;font-weight:600;margin:0 0 6px}
+.tag{display:inline-flex;align-items:center;font-size:12.5px}
+.bt{font:600 10px var(--mono);letter-spacing:.06em;text-transform:uppercase;background:var(--ink);color:#fff;padding:2px 6px;border-radius:2px;margin-left:6px}
+#tbl th{cursor:pointer;user-select:none}
+#tbl th:hover{color:var(--ink)}
+#tbl tbody tr{cursor:pointer}
+.notes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin-top:24px}
+.notes ul{margin:8px 0 14px;padding-left:18px;font-size:13px;color:var(--ink-2)}
+.notes li{margin:0 0 6px}
+.notes p{font-size:13px;color:var(--ink-2);margin:6px 0}
+.notes h3+ul,.notes h3+p{margin-top:8px}
+.notes h3:not(:first-child){margin-top:10px}
+
+footer{width:calc(100% - 2*var(--gut));max-width:calc(var(--max) - 48px);margin:0 auto;padding:20px 0 44px;font-size:12.5px;color:var(--muted);line-height:1.6;border-top:1px solid var(--rule)}
+footer p{margin:4px 0;max-width:120ch}
+#tip{position:fixed;z-index:60;display:none;pointer-events:none;background:var(--ink);color:#fff;font-size:12.5px;padding:8px 11px;border-radius:3px;max-width:320px;white-space:pre-line;line-height:1.5;box-shadow:0 6px 18px rgba(20,32,27,.18)}
+
+/* ---------- màn hình hẹp ---------- */
+@media (max-width:1120px){
+  .top-in{grid-template-columns:minmax(0,1fr)}
+  .tabs{overflow-x:auto;margin:0 calc(var(--gut)*-1);padding:0 calc(var(--gut) - 12px);scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .brand{padding-bottom:4px}
+  .scenwrap,.maprow{grid-template-columns:minmax(0,1fr)}
+  .pars,.side{border-right:0;border-bottom:1px solid var(--rule)}
+  .cmp{grid-template-columns:minmax(0,1fr)}
+  .rank{max-height:380px}
+  .r73{grid-template-columns:minmax(0,1fr)}
+}
+@media (min-width:1121px){.pars{position:sticky;top:96px;align-self:start;max-height:calc(100vh - 110px);overflow:auto}}
+@media (max-width:900px){
+  :root{--gut:16px}
+  .phead{grid-template-columns:minmax(0,1fr)}
+  .phead h2{font-size:25px}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stat:nth-child(3){padding-left:0;border-left:0}
+  .stat:nth-child(n+3){border-top:1px solid var(--rule)}
+  .r2,.notes{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:640px){
+  .brand h1{font-size:19px}
+  .brand .k span+span{display:none}
+  .tabs button{padding:12px 10px 14px;font-size:13px}
+  .tabs button b{display:none}
+  .phead h2{font-size:22px}
+  .lede{font-size:14px}
+  .stat-v{font-size:24px}
+  .stat{padding-right:12px}.stat+.stat{padding-left:12px}
+  .card{padding:16px 14px 14px}
+  .out{padding:18px 14px}.pars{padding:16px 14px}.detail{padding:16px 14px}
+  .periods,.mini{grid-template-columns:minmax(0,1fr)}
+  .per+.per,.mini>div+div{padding-left:0;border-left:0;border-top:1px solid var(--rule-soft)}
+  .quad{grid-template-columns:minmax(0,1fr)}
+  .quad>div:nth-child(3){grid-column:auto;grid-row:auto}
+  .rk{grid-template-columns:20px minmax(0,1fr)}.rk .rv{grid-column:2}
+  .hero-n .hm{margin-left:0;text-align:left;width:100%}
+  .hn b{font-size:34px}
+  .dgrid{grid-template-columns:minmax(0,1fr)}
+  .hyp thead{display:none}
+  .hyp tr{display:grid;grid-template-columns:38px minmax(0,1fr);border-bottom:1px solid var(--rule-soft);padding:8px 0}
+  .hyp td{border:0;padding:2px 4px;white-space:normal!important;min-width:0!important}
+  .hyp td.code{grid-row:span 5;width:auto}
+  .bar-row{grid-template-columns:minmax(0,1fr)}
+  .tools input[type=search]{flex:1 1 100%}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+@media print{.top{position:static}.tabs,.pars,#tip{display:none}.panel[hidden]{display:block}}
 </style>
 </head>
 <body>
+<a class="skip" href="#main">Bỏ qua đến nội dung</a>
 <header class="top"><div class="top-in">
   <div class="brand">
+    <div class="k"><span><b>VietLeap 2026</b> Nhóm 7</span><span>FiinQuantX, chốt 19/11/2026</span></div>
     <h1>Nghịch lý nâng hạng</h1>
-    <p>FTSE nâng hạng Việt Nam từ 21/9/2026 nhưng khối ngoại vẫn bán ròng. Vốn nghẽn ở đâu và nên nới đòn bẩy nào trước?</p>
   </div>
-  <div class="tabs" role="tablist" aria-label="Các panel của dashboard">
-    <button role="tab" id="t1" aria-controls="pan1" aria-selected="true"><b>01</b> Nghịch lý</button>
-    <button role="tab" id="t2" aria-controls="pan2" aria-selected="false" tabindex="-1"><b>02</b> Điểm nghẽn</button>
-    <button role="tab" id="t3" aria-controls="pan3" aria-selected="false" tabindex="-1"><b>03</b> Mô phỏng</button>
-    <button role="tab" id="t4" aria-controls="pan4" aria-selected="false" tabindex="-1"><b>04</b> Từng mã</button>
+  <div class="tabs" role="tablist" aria-label="Các phần của dashboard">
+    <button role="tab" id="t1" aria-controls="pan1" aria-selected="true"><b>01</b>Nghịch lý</button>
+    <button role="tab" id="t2" aria-controls="pan2" aria-selected="false" tabindex="-1"><b>02</b>Điểm nghẽn</button>
+    <button role="tab" id="t3" aria-controls="pan3" aria-selected="false" tabindex="-1"><b>03</b>Kiểm định</button>
+    <button role="tab" id="t4" aria-controls="pan4" aria-selected="false" tabindex="-1"><b>04</b>Mô phỏng</button>
+    <button role="tab" id="t5" aria-controls="pan5" aria-selected="false" tabindex="-1"><b>05</b>Từng mã</button>
   </div>
 </div></header>
 
-<main class="wrap">
+<main id="main">
 
-<!-- PANEL 01 -->
+<!-- 01 NGHỊCH LÝ -->
 <section class="panel" id="pan1" role="tabpanel" aria-labelledby="t1">
-  <p class="lede" id="lede1"></p>
+  <div class="phead">
+    <p class="kick"><b>01</b>Nghịch lý</p>
+    <h2 id="h1t"></h2>
+    <p class="lede" id="lede1"></p>
+  </div>
   <div class="stats" id="stats1"></div>
-  <div class="grid g2">
+  <div class="row r73">
     <div class="card">
-      <h3>Ròng khối ngoại theo tháng, 2026</h3>
-      <p class="sub">Nghìn tỷ đồng, sàn HOSE (VN-Index). Tách khớp lệnh và thỏa thuận.</p>
-      <div class="key"><span><i class="sw c-neu"></i>Ròng khớp lệnh</span><span><i class="sw c-deal"></i>Ròng thỏa thuận</span></div>
-      <div id="flowChart"></div>
-      <p class="read"><b>Cách đọc</b>Mỗi cột là ròng khối ngoại của một tháng. Cột nằm dưới đường 0 là bán ròng. Đường nét đứt là ngày 21/9, khi nâng hạng của FTSE có hiệu lực, và tháng 9 cùng các tháng sau đó vẫn âm.</p>
-      <details><summary>Xem dạng bảng</summary><div id="flowTable" class="tbl-wrap" style="margin-top:8px"></div></details>
+      <h3>Ròng khối ngoại theo tháng, sàn HOSE</h3>
+      <p class="sub">Nghìn tỷ đồng. Cột tách khớp lệnh và thỏa thuận, chấm là tổng ròng của tháng. Tháng 11 tính đến 19/11.</p>
+      <div class="key"><span><i class="sw c-match"></i>Ròng khớp lệnh</span><span><i class="sw c-deal"></i>Ròng thỏa thuận</span><span><i class="sw ring"></i>Tổng ròng</span></div>
+      <div class="chart" id="flowChart"></div>
+      <div class="periods" id="periods"></div>
+      <p class="read"><b class="rl">Cách đọc</b>Cột dưới đường 0 là bán ròng. Nét đứt là ngày 21/9, khi nâng hạng của FTSE có hiệu lực. Ba ô dưới biểu đồ so sánh mức ròng bình quân mỗi tháng trước, trong và sau tháng hiệu lực. Giai đoạn sau chỉ có hai tháng, nên đây là mô tả chứ chưa đủ để kiểm định.</p>
+      <details class="tv"><summary>Xem dạng bảng</summary><div id="flowTable" class="tbl-wrap" style="margin-top:8px"></div></details>
     </div>
     <div class="card">
       <h3>Ai bán, ai mua</h3>
-      <p class="sub">Ròng khối ngoại cả kỳ của các mã lớn nhất, nghìn tỷ đồng. Mười mã bán nhiều nhất và sáu mã mua nhiều nhất.</p>
-      <div id="movers"></div>
-      <p class="read"><b>Cách đọc</b>Thanh đỏ là bán ròng, thanh xanh là mua ròng, vạch đứng là mức 0. Dòng bán tập trung vào một số ít mã vốn hóa lớn, nên không phải mã nào cũng bị bán.</p>
+      <p class="sub">Ròng khối ngoại cả kỳ, nghìn tỷ đồng. Mười mã bán nhiều nhất và sáu mã mua nhiều nhất trong 124 mã lớn nhất.</p>
+      <div class="key"><span><i class="sw c-sell"></i>Bán ròng</span><span><i class="sw c-buy"></i>Mua ròng</span></div>
+      <div id="movers" class="grow"></div>
+      <p class="read" id="moversRead"></p>
     </div>
   </div>
   <p class="src" id="src1"></p>
 </section>
 
-<!-- PANEL 02 -->
+<!-- 02 ĐIỂM NGHẼN -->
 <section class="panel" id="pan2" role="tabpanel" aria-labelledby="t2" hidden>
-  <p class="lede" id="lede2"></p>
-  <div class="grid g2">
+  <div class="phead">
+    <p class="kick"><b>02</b>Điểm nghẽn</p>
+    <h2>Khi room gần cạn, giao dịch của khối ngoại dồn sang kênh thỏa thuận</h2>
+    <p class="lede" id="lede2"></p>
+  </div>
+  <div class="row r2">
     <div class="card">
       <h3>Tỷ trọng thỏa thuận theo room còn lại</h3>
-      <p class="sub">Phần giá trị mua và bán của khối ngoại đi qua thỏa thuận, gộp theo nhóm room còn lại cuối tháng so với tổng room cho phép.</p>
+      <p class="sub">Phần giá trị mua và bán của khối ngoại đi qua thỏa thuận, theo nhóm room còn lại cuối tháng so với tổng room cho phép.</p>
       <div id="evidBars"></div>
-      <div class="verdict" id="roomList" style="margin:12px 0 0"></div>
-      <p class="read"><b>Cách đọc</b>Thanh cam là nhóm room gần kín. Khi room đã đầy, một khối ngoại chỉ mua thêm được nếu khối ngoại khác bán lại, nên giao dịch dồn sang thỏa thuận. Đây là quan hệ thống kê, chưa phải bằng chứng nhân quả.</p>
+      <div class="note" id="roomList"></div>
+      <p class="read"><b class="rl">Cách đọc</b>Khi room đã kín, nhà đầu tư nước ngoài chỉ mua thêm được nếu một nhà đầu tư nước ngoài khác bán lại, và giao dịch này thường đi qua thỏa thuận. Thanh đậm là tỷ trọng gộp theo giá trị, thanh nhạt là trung vị theo quan sát.</p>
     </div>
     <div class="card">
       <h3>Mỗi chấm là một mã trong một tháng</h3>
-      <p class="sub">Trục ngang là room còn lại (% tổng room), trục dọc là tỷ trọng thỏa thuận (%). 124 mã lớn nhất, 11 tháng.</p>
-      <div class="key"><span><i class="sw c c-room"></i>Room còn dưới 10%</span><span><i class="sw c c-neu"></i>Room còn từ 10% trở lên</span></div>
-      <div id="scat"></div>
+      <p class="sub">Trục ngang: room còn lại, % tổng room. Trục dọc: thỏa thuận chiếm bao nhiêu % giao dịch ngoại. 124 mã lớn nhất, 11 tháng.</p>
+      <div class="key"><span><i class="sw c c-room"></i>Room còn dưới 10%</span><span><i class="sw c c-match"></i>Room còn từ 10% trở lên</span></div>
+      <div class="chart" id="scat"></div>
       <p class="read" id="scatRead"></p>
     </div>
   </div>
-  <div class="grid g2 mt">
+  <div class="row r2">
     <div class="card">
       <h3>Kiểm chứng bằng danh mục FTSE thật</h3>
-      <p class="sub">Headroom (room còn lại chia cho giới hạn sở hữu nước ngoài) ngày 30/6/2026, ngày FTSE chốt dữ liệu xét chọn. Các mã HOSE lớn nhất có dữ liệu theo tháng.</p>
-      <div class="key"><span><i class="sw c c-deal"></i>27 mã FTSE chọn</span><span><i class="sw c c-room"></i>Không được chọn, headroom dưới 20%</span><span><i class="sw c c-oth"></i>Không được chọn, lý do khác</span></div>
-      <div id="ftseStrip"></div>
+      <p class="sub">Headroom (room còn lại chia giới hạn sở hữu nước ngoài) ngày 30/6/2026, ngày FTSE chốt dữ liệu xét chọn. Các mã HOSE lớn nhất có dữ liệu theo tháng.</p>
+      <div class="key"><span><i class="sw c c-deal"></i>27 mã FTSE chọn</span><span><i class="sw c c-room"></i>Bị loại, headroom dưới 20%</span><span><i class="sw c c-oth"></i>Bị loại vì lý do khác</span></div>
+      <div class="chart" id="ftseStrip"></div>
       <p class="read" id="ftseRead"></p>
     </div>
     <div class="card">
       <h3>Mã lớn bị loại vì headroom dưới 20%</h3>
-      <p class="sub">Mức nới room cần để headroom đạt 20% tính theo số liệu 19/11. Vốn thụ động ước tính theo tỷ trọng giá trị có thể đầu tư so với rổ 27 mã, nếu tổng vốn thụ động là US$1,5 tỷ.</p>
-      <div id="ftseTbl" class="tbl-wrap" style="max-height:none"></div>
+      <p class="sub">Mức nới room cần để headroom đạt 20% theo số liệu 19/11, và vốn thụ động ước tính các mã này có thể nhận nếu tổng vốn thụ động là US$1,5 tỷ.</p>
+      <div id="ftseTbl" class="tbl-wrap"></div>
       <p class="read" id="ftseNote"></p>
     </div>
   </div>
-  <div class="grid g2 mt">
+  <div class="row r2">
     <div class="card">
-      <h3>Ca Techcombank (TCB): ròng khối ngoại theo tháng</h3>
+      <h3>Ca Techcombank: ròng khối ngoại theo tháng</h3>
       <p class="sub">Tỷ đồng, tách khớp lệnh và thỏa thuận.</p>
-      <div class="key"><span><i class="sw c-neu"></i>Ròng khớp lệnh</span><span><i class="sw c-deal"></i>Ròng thỏa thuận</span></div>
-      <div id="tcbNet"></div>
+      <div class="key"><span><i class="sw c-match"></i>Ròng khớp lệnh</span><span><i class="sw c-deal"></i>Ròng thỏa thuận</span></div>
+      <div class="chart" id="tcbNet"></div>
       <p class="read" id="tcbRead1"></p>
     </div>
     <div class="card">
-      <h3>Ca TCB: tỷ trọng thỏa thuận và room còn lại</h3>
-      <p class="sub">Hai đường, cùng thang phần trăm.</p>
-      <div class="key"><span><i class="sw c-deal"></i>Thỏa thuận chiếm bao nhiêu % giao dịch ngoại</span><span><i class="sw c-room"></i>Room còn lại, % tổng room</span></div>
-      <div id="tcbDeal"></div>
+      <h3>Ca Techcombank: room còn lại và tỷ trọng thỏa thuận</h3>
+      <p class="sub">Hai đường trên cùng một thang phần trăm.</p>
+      <div class="key"><span><i class="sw ln c-deal"></i>Thỏa thuận, % giao dịch ngoại</span><span><i class="sw ln c-room"></i>Room còn lại, % tổng room</span></div>
+      <div class="chart" id="tcbDeal"></div>
       <p class="read" id="tcbRead2"></p>
     </div>
   </div>
   <p class="src" id="src2"></p>
 </section>
 
-<!-- PANEL 03 -->
+<!-- 03 KIỂM ĐỊNH -->
 <section class="panel" id="pan3" role="tabpanel" aria-labelledby="t3" hidden>
-  <p class="lede" id="lede3" aria-live="polite"></p>
+  <div class="phead">
+    <p class="kick"><b>03</b>Kiểm định</p>
+    <h2>Room là một ngưỡng, không phải một bậc thang</h2>
+    <p class="lede" id="lede3"></p>
+  </div>
+  <div class="card" style="margin-bottom:24px">
+    <h3>Bảy giả thuyết và kết quả</h3>
+    <p class="sub">Mỗi giả thuyết gắn với một cơ sở lý thuyết và một phép kiểm. H1 và H7 được tính lại ngay trong trang, các giả thuyết còn lại lấy từ báo cáo kinh tế lượng của nhóm.</p>
+    <div class="tbl-wrap" style="border:0"><table class="hyp" id="hypTbl"></table></div>
+  </div>
+  <div class="row r73">
+    <div class="card">
+      <h3>Hệ số room cạn qua 14 đặc tả</h3>
+      <p class="sub">Chênh lệch tỷ trọng thỏa thuận giữa nhóm room còn dưới ngưỡng và nhóm room còn từ 30% trở lên, điểm phần trăm, khoảng tin cậy 95% với sai số chuẩn cụm theo mã.</p>
+      <div class="chart" id="forest"></div>
+      <p class="read" id="forestRead"></p>
+    </div>
+    <div class="card">
+      <h3>Vách đứng ở điểm hết room</h3>
+      <p class="sub">Hệ số room cạn khi đổi ngưỡng định nghĩa, điểm phần trăm, mô hình M2.</p>
+      <div class="chart" id="cliff"></div>
+      <p class="read"><b class="rl">Cách đọc</b>Ngưỡng càng thấp thì hệ số càng lớn: tác động mạnh nhất nằm sát điểm room bằng 0. Ca TCB ở panel 02 cho thấy cùng hình ảnh, chỉ cần còn một ít room là khối ngoại quay lại khớp lệnh.</p>
+    </div>
+  </div>
+  <div class="row r2">
+    <div class="card">
+      <h3>Xác suất một tháng do thỏa thuận chi phối</h3>
+      <p class="sub">Xác suất dự báo chuẩn hóa từ mô hình Logit để tỷ trọng thỏa thuận của một mã trong một tháng từ 50% trở lên.</p>
+      <div id="logitBars"></div>
+      <div class="mini" id="logitMini"></div>
+      <p class="read"><b class="rl">Cách đọc</b>Chỉ 44 trên 1.169 quan sát có thỏa thuận chiếm từ một nửa trở lên, nên đây là biến hiếm và độ lớn tỷ số chênh cần đọc thận trọng. Nhóm 10% đến 30% không khác nhóm room rộng, nhất quán với dạng ngưỡng.</p>
+    </div>
+    <div class="card">
+      <h3>Room có giải thích mức bán ròng của từng mã không</h3>
+      <p class="sub">Hồi quy chéo cường độ ròng khối ngoại (% vốn hóa) của 119 mã theo đặc điểm mã. Sai số chuẩn vững HC3.</p>
+      <div class="tbl-wrap"><table id="csTbl"></table></div>
+      <p class="read"><b class="rl">Cách đọc</b>Room còn lại không có ý nghĩa thống kê ở cả ba đặc tả, phù hợp với việc room chỉ chặn lệnh mua trong khi năm 2026 khối ngoại chủ yếu bán. Mã tăng giá từ đầu năm mạnh hơn thì bị bán ít hơn, nhưng quan hệ này có thể chạy theo cả hai chiều nên không đọc là nhân quả. Không bác bỏ được H6 chưa có nghĩa là room hoàn toàn không liên quan, vì mẫu chỉ có 119 mã.</p>
+    </div>
+  </div>
+  <div class="note blue" style="margin:0 0 24px">
+    <p><b>Giới hạn của bằng chứng.</b> Các hệ số là quan hệ thống kê có điều kiện. Room có thể nội sinh: một mã hết room vì được khối ngoại ưa chuộng, và chính điều đó có thể đi kèm giao dịch khối lớn. Mô hình hiệu ứng cố định mã chỉ được nhận dạng từ 4 ngân hàng đổi trạng thái qua ngưỡng 10% trong năm (ABB, ACB, MSB, VIB), dù kết quả giữ dấu khi bỏ lần lượt từng mã. Chuỗi thời gian chỉ có 11 tháng.</p>
+  </div>
+  <p class="src"><b>Nguồn</b>Báo cáo <a href="docs/nghich_ly_nang_hang.html">Nghịch lý nâng hạng: room ngoại, kênh thỏa thuận và khả năng hấp thụ dòng vốn thụ động FTSE</a> (R 4.6.1, fixest, sandwich), Bảng 5.2, 6.2 đến 6.8. Bảng dữ liệu 1.169 quan sát mã theo tháng của 124 mã lớn nhất, FiinQuantX foreign_flow theo tháng, chốt 19/11/2026. Phần kinh tế lượng không phụ thuộc vào các giả định thanh khoản và tổng vốn của mô phỏng.</p>
+</section>
+
+<!-- 04 MÔ PHỎNG -->
+<section class="panel" id="pan4" role="tabpanel" aria-labelledby="t4" hidden>
+  <div class="phead">
+    <p class="kick"><b>04</b>Mô phỏng</p>
+    <h2>Nới đòn bẩy nào trước để rổ hấp thụ được vốn FTSE</h2>
+    <p class="lede" id="lede4" aria-live="polite"></p>
+  </div>
   <div class="scenwrap">
     <div class="pars" id="pars">
-      <div class="grp">Đòn bẩy chính sách</div>
-      <div class="field"><label for="rdr"><span>Nới room (điểm % sở hữu)</span><output class="fv" id="odr"></output></label><input id="rdr" type="range" min="0" max="20" step="1"></div>
-      <div class="field"><label for="rdf"><span>Tăng free float (điểm %)</span><output class="fv" id="odf"></output></label><input id="rdf" type="range" min="0" max="30" step="1"></div>
-      <div class="field"><label for="rg"><span>Tăng thanh khoản (% GTGD)</span><output class="fv" id="og"></output></label><input id="rg" type="range" min="0" max="100" step="5"></div>
+      <p class="pgrp">Đòn bẩy chính sách</p>
+      <div class="field"><label for="rdr"><span>Nới room, điểm % sở hữu</span><output class="fv" id="odr"></output></label><input id="rdr" type="range" min="0" max="20" step="1"></div>
+      <div class="field"><label for="rdf"><span>Tăng free float, điểm %</span><output class="fv" id="odf"></output></label><input id="rdf" type="range" min="0" max="30" step="1"></div>
+      <div class="field"><label for="rg"><span>Tăng thanh khoản, % GTGD</span><output class="fv" id="og"></output></label><input id="rg" type="range" min="0" max="100" step="5"></div>
 
       <details class="adv" id="advDem" open><summary>Nhu cầu vốn<span class="sm" id="sumDem"></span></summary>
-        <div class="field"><span class="lb">Rổ: 27 mã FTSE thật, hoặc N mã lớn nhất theo vốn hóa</span><div class="seg" id="segN"></div></div>
+        <div class="field"><span class="lb">Rổ: 27 mã FTSE thật, hoặc N mã lớn nhất</span><div class="seg" id="segN"></div></div>
         <div class="field"><span class="lb">Đợt FTSE, tỷ trọng cộng dồn</span><div class="seg" id="segStage"></div></div>
+        <div class="field"><span class="lb">Tổng vốn, US$ tỷ</span><div class="seg" id="segT"></div>
+          <p class="hint">1,5: vốn thụ động theo ước tính của FTSE. 2,2: ước tính sau khi FTSE công bố tỷ trọng 0,488%. 6: gồm cả quỹ chủ động.</p></div>
         <div class="field two">
-          <div><label class="lb" for="tgt">Vốn cần vào (US$ tỷ)</label><input id="tgt" type="number" min="0.5" max="30" step="0.1" value="1.5"></div>
-          <div><label class="lb" for="fx">Tỷ giá (VND/USD)</label><input id="fx" type="number" min="23000" max="28000" step="50" value="25650"></div>
+          <div><label class="lb" for="tgt">Tự nhập, US$ tỷ</label><input id="tgt" type="number" min="0.5" max="30" step="0.1" value="1.5"></div>
+          <div><label class="lb" for="fx">Tỷ giá, VND/USD</label><input id="fx" type="number" min="23000" max="28000" step="50" value="25650"></div>
         </div>
-        <div class="seg" id="segT" style="margin-top:6px"></div>
-        <p class="hint">1,5: vốn thụ động theo ước tính của FTSE. 2,2: vốn thụ động theo ước tính sau khi FTSE công bố tỷ trọng 0,488%. 6: ước tính của FTSE gồm cả quỹ chủ động.</p>
       </details>
       <details class="adv" id="advAbs" open><summary>Giới hạn hấp thụ<span class="sm" id="sumAbs"></span></summary>
-        <div class="field"><label for="rH"><span>Số phiên để giải ngân (H)</span><output class="fv" id="oH"></output></label><input id="rH" type="range" min="20" max="500" step="10"></div>
-        <div class="field"><label for="rp"><span>Tỷ lệ tối đa một quỹ mua trong thanh khoản ngày (p)</span><output class="fv" id="op"></output></label><input id="rp" type="range" min="2" max="30" step="1"></div>
-        <div class="field"><label for="rmin"><span>GTGD bình quân tối thiểu để vào rổ</span><output class="fv" id="omin"></output></label><input id="rmin" type="range" min="0" max="100" step="5"><p class="hint">Mô phỏng đơn giản bộ lọc thanh khoản của chỉ số.</p></div>
-        <div class="field"><label for="reps"><span>Thanh khoản theo free float (độ co giãn)</span><output class="fv" id="oeps"></output></label><input id="reps" type="range" min="0" max="1" step="0.1"></div>
+        <div class="field"><label for="rH"><span>Số phiên để giải ngân, H</span><output class="fv" id="oH"></output></label><input id="rH" type="range" min="20" max="500" step="10"></div>
+        <div class="field"><label for="rp"><span>Tỷ lệ tối đa mua trong thanh khoản ngày, p</span><output class="fv" id="op"></output></label><input id="rp" type="range" min="2" max="30" step="1"></div>
+        <div class="field"><label for="rmin"><span>GTGD khớp lệnh tối thiểu để vào rổ</span><output class="fv" id="omin"></output></label><input id="rmin" type="range" min="0" max="100" step="5"></div>
+        <div class="field"><label for="reps"><span>Độ co giãn thanh khoản theo free float</span><output class="fv" id="oeps"></output></label><input id="reps" type="range" min="0" max="1" step="0.1"></div>
       </details>
       <details class="adv" id="advEq"><summary>Công thức của mô hình</summary>
-        <div class="eq"><i class="sw c-room"></i>R = room còn × vốn hóa<br><i class="sw t c-float"></i>F = free float × vốn hóa<br><i class="sw c c-liq"></i>L = p × GTGD bq × H<br>dư địa = min(R, F, L)<br><span class="cmt">nhu cầu = mục tiêu × F ÷ ΣF</span></div>
+        <div class="eq"><i class="sw c-room"></i>R = room còn × vốn hóa<br><i class="sw t c-float"></i>F = free float × vốn hóa<br><i class="sw c c-liq"></i>L = p × GTGD khớp lệnh × H<br>dư địa = min(R, F, L)<br><span class="cmt">nhu cầu = mục tiêu × F ÷ ΣF</span><br><span class="cmt">hấp thụ = min(nhu cầu, dư địa)</span></div>
       </details>
-      <button class="btn" id="reset">Đặt lại mặc định</button>
-      <div class="fixed"><span>Dữ liệu <b>FiinQuantX, 19/11/2026</b></span><span>Rổ <b id="fxBasket"></b></span></div>
+      <button class="btn" id="reset" type="button">Đặt lại mặc định</button>
+      <div class="fixed">Dữ liệu <b>FiinQuantX, 19/11/2026</b>. Rổ hiện tại <b id="fxBasket"></b>.</div>
     </div>
 
     <div class="out">
-      <div class="hero" id="chain"></div>
+      <div id="chain"></div>
       <div class="verdict" id="verdict" aria-live="polite"></div>
       <div class="quad">
         <div><p class="qt">Dư địa hấp thụ theo nút thắt</p><p class="qs">Tổng dư địa của rổ, xếp theo giới hạn chặt nhất của từng mã. Giới hạn chặt nhất chưa chắc đã chặn nhu cầu.</p><div class="seg-bar" id="capBar" role="img" aria-label="Dư địa hấp thụ theo nút thắt"></div><div class="rows" id="capRows"></div></div>
-        <div><p class="qt">Phần nhu cầu bị bỏ lỡ theo nút thắt</p><p class="qs">Nhu cầu mô phỏng mà rổ không hấp thụ được, cơ sở chưa dùng đòn bẩy, kèm số mã thực sự thiếu dư địa.</p><div class="seg-bar" id="gapBar" role="img" aria-label="Phần nhu cầu bị bỏ lỡ theo nút thắt"></div><div class="rows" id="gapRows"></div></div>
-        <div><p class="qt">Các mã bị bỏ lỡ nhiều vốn nhất (tối đa 12)</p><p class="qs">Nghìn tỷ đồng, số trước mũi tên là cơ sở, sau mũi tên là sau đòn bẩy. Bấm vào mã để xem chi tiết.</p>
+        <div><p class="qt">Nhu cầu bị bỏ lỡ theo nút thắt</p><p class="qs">Phần nhu cầu rổ không hấp thụ được khi chưa dùng đòn bẩy, kèm số mã thực sự thiếu dư địa.</p><div class="seg-bar" id="gapBar" role="img" aria-label="Phần nhu cầu bị bỏ lỡ theo nút thắt"></div><div class="rows" id="gapRows"></div></div>
+        <div><p class="qt">Mã bị bỏ lỡ nhiều vốn nhất</p><p class="qs">Nghìn tỷ đồng, cơ sở rồi sau đòn bẩy. Bấm vào mã để xem chi tiết.</p>
           <div class="key"><span><i class="sw c c-liq"></i>Thanh khoản</span><span><i class="sw c-room"></i>Room</span><span><i class="sw t c-float"></i>Free float</span></div>
           <div id="topGap"></div></div>
       </div>
-      <p class="read"><b>Cách đọc</b>Nút thắt của mã là giới hạn nhỏ nhất trong R, F, L, và mỗi nút thắt gắn với một đòn bẩy: room với nới giới hạn sở hữu, free float với tăng cổ phiếu tự do chuyển nhượng, thanh khoản với cải thiện giao dịch. Độ phủ là phần mục tiêu vốn mà rổ hấp thụ được.</p>
-      <div class="cmp"><div class="cmpgrid">
-        <div><h4>Độ nhạy: độ phủ cơ sở theo H và p</h4><div id="heat"></div><p class="read"><b>Cách đọc</b>Dòng là số phiên H, cột là tỷ lệ p. Ô viền đậm là thiết lập hiện tại. Chưa dùng đòn bẩy nào.</p></div>
-        <div><h4>Từng đòn bẩy ở mức đang chọn</h4><div id="cmpTbl"></div><p class="read"><b>Cách đọc</b>Mỗi dòng là một kịch bản trên cùng rổ và cùng mục tiêu. Đơn vị nghìn tỷ đồng.</p></div>
-      </div></div>
+      <p class="read"><b class="rl">Cách đọc</b>Nút thắt của mã là giới hạn nhỏ nhất trong R, F, L, và mỗi nút thắt gắn với một đòn bẩy: room với nới giới hạn sở hữu, free float với tăng cổ phiếu tự do chuyển nhượng, thanh khoản với cải thiện giao dịch. Độ phủ là phần mục tiêu vốn mà rổ hấp thụ được.</p>
+      <div class="cmp">
+        <div><h4>Độ nhạy theo H và p</h4><div id="heat"></div><p class="read"><b class="rl">Cách đọc</b>Mỗi ô là độ phủ cơ sở. Dòng là số phiên H, cột là tỷ lệ p. Ô viền đậm là thiết lập hiện tại.</p></div>
+        <div><h4>Từng đòn bẩy ở mức đang chọn</h4><div id="cmpTbl" class="tbl-wrap"></div><p class="read"><b class="rl">Cách đọc</b>Mỗi dòng là một kịch bản trên cùng rổ và cùng mục tiêu. Đơn vị nghìn tỷ đồng.</p></div>
+      </div>
     </div>
   </div>
-  <p class="src"><b>Nguồn</b>FiinQuantX (vốn hóa, room, free float, giá trị giao dịch bình quân), ngày chốt 19/11/2026. FTSE Russell: nâng hạng hiệu lực 21/9/2026, đưa vào chỉ số 4 đợt đến 9/2027 với tỷ trọng 10%, 20%, 35%, 35%. Theo ước tính của FTSE, khoảng US$6 tỷ gồm cả quỹ chủ động và thụ động, riêng quỹ thụ động khoảng US$1,5 tỷ (<a href="https://diendandoanhnghiep.vn/print/10182849.html" target="_blank" rel="noopener">Diễn đàn Doanh nghiệp</a>). Sau khi FTSE công bố tỷ trọng 0,488% trong FTSE Emerging All Cap (<a href="https://www.lseg.com/content/dam/ftse-russell/en_us/documents/policy-documents/ftse-faq-document-vietnam-reclassification.pdf" target="_blank" rel="noopener">FAQ của FTSE Russell</a>), một số công ty chứng khoán ước tính vốn thụ động khoảng US$2,2 tỷ (<a href="https://baomoi.com/ftse-t49487107.epi" target="_blank" rel="noopener">Báo Mới</a>). Tỷ giá mặc định 25.650 gần tỷ giá trung tâm 25.637 ngày 13/11/2026 theo <a href="https://www.vcci.com.vn/news/ty-gia-trung-tam-tang-manh-gia-usd-tu-do-vuot-26000-dong-usd" target="_blank" rel="noopener">VCCI</a>. Đây là mô phỏng với các giả định nêu ở panel 04, không phải dự báo.</p>
+  <p class="src"><b>Nguồn</b>FiinQuantX (vốn hóa, room, free float, giá trị giao dịch khớp lệnh bình quân), chốt 19/11/2026. FTSE Russell: nâng hạng hiệu lực 21/9/2026, đưa vào chỉ số 4 đợt đến 9/2027 với tỷ trọng 10%, 20%, 35%, 35%. Theo ước tính của FTSE, khoảng US$6 tỷ gồm cả quỹ chủ động và thụ động, riêng quỹ thụ động khoảng US$1,5 tỷ (<a href="https://diendandoanhnghiep.vn/print/10182849.html" target="_blank" rel="noopener">Diễn đàn Doanh nghiệp</a>). Sau khi FTSE công bố tỷ trọng 0,488% trong FTSE Emerging All Cap (<a href="https://www.lseg.com/content/dam/ftse-russell/en_us/documents/policy-documents/ftse-faq-document-vietnam-reclassification.pdf" target="_blank" rel="noopener">FAQ của FTSE Russell</a>), một số công ty chứng khoán ước tính vốn thụ động khoảng US$2,2 tỷ (<a href="https://baomoi.com/ftse-t49487107.epi" target="_blank" rel="noopener">Báo Mới</a>). Tỷ giá mặc định 25.650 gần tỷ giá trung tâm 25.637 ngày 13/11/2026 theo <a href="https://www.vcci.com.vn/news/ty-gia-trung-tam-tang-manh-gia-usd-tu-do-vuot-26000-dong-usd" target="_blank" rel="noopener">VCCI</a>. Đây là mô phỏng với các giả định nêu ở panel 05, không phải dự báo.</p>
 </section>
 
-<!-- PANEL 04 -->
-<section class="panel" id="pan4" role="tabpanel" aria-labelledby="t4" hidden>
-  <p class="lede" id="lede4"></p>
+<!-- 05 TỪNG MÃ -->
+<section class="panel" id="pan5" role="tabpanel" aria-labelledby="t5" hidden>
+  <div class="phead">
+    <p class="kick"><b>05</b>Từng mã</p>
+    <h2>Ba giới hạn của từng mã và dòng vốn ngoại theo tháng</h2>
+    <p class="lede" id="lede5"></p>
+  </div>
   <div class="maprow">
     <div class="side">
-      <h4>Bị bỏ lỡ nhiều nhất trước</h4>
       <label class="sr" for="lq">Tìm mã hoặc tên</label>
       <input id="lq" type="search" placeholder="Tìm mã hoặc tên">
+      <p class="small" style="margin:0 0 8px">Xếp theo phần nhu cầu bị bỏ lỡ, nghìn tỷ đồng</p>
       <div class="rank" id="list"></div>
     </div>
     <div class="detail">
       <div id="detailHead"></div>
       <div class="dgrid">
-        <div style="grid-column:1/-1"><h5>Ròng khối ngoại theo tháng (tỷ đồng)</h5><div class="key"><span><i class="sw c-neu"></i>Khớp lệnh</span><span><i class="sw c-deal"></i>Thỏa thuận</span></div><div id="dNet"></div></div>
-        <div><h5>Room còn lại (% tổng room)</h5><div id="dRoom"></div></div>
-        <div><h5>Thỏa thuận chiếm (% giao dịch ngoại)</h5><div id="dDeal"></div></div>
+        <div style="grid-column:1/-1"><h5>Ròng khối ngoại theo tháng, tỷ đồng</h5><div class="key"><span><i class="sw c-match"></i>Khớp lệnh</span><span><i class="sw c-deal"></i>Thỏa thuận</span></div><div class="chart" id="dNet"></div></div>
+        <div><h5>Room còn lại, % tổng room</h5><div class="chart" id="dRoom"></div></div>
+        <div><h5>Thỏa thuận, % giao dịch ngoại</h5><div class="chart" id="dDeal"></div></div>
       </div>
-      <p class="read"><b>Cách đọc</b>Ba thanh đầu so ba giới hạn của mã, giới hạn ngắn nhất là nút thắt. Ba biểu đồ dưới cho thấy mã đó đã bị bán hay mua ròng ra sao qua từng tháng và qua kênh nào. Chỉ 124 mã lớn nhất có dữ liệu theo tháng.</p>
+      <p class="read"><b class="rl">Cách đọc</b>Ba thanh đầu so ba giới hạn của mã, giới hạn ngắn nhất là nút thắt. Ba biểu đồ dưới cho thấy mã đó bị bán hay được mua ròng ra sao qua từng tháng và qua kênh nào. Chỉ 124 mã lớn nhất có dữ liệu theo tháng.</p>
     </div>
   </div>
 
-  <div class="card mt" style="border:1px solid var(--rule)">
+  <div class="card" style="margin-top:24px">
     <h3>Bảng mã và xuất dữ liệu</h3>
-    <p class="sub">Kết quả tính cho rổ đang chọn ở panel 03. Cột Dư địa, Nút thắt, Nhu cầu và Bị bỏ lỡ là mức cơ sở, cột Sau đòn bẩy áp dụng các đòn bẩy đã chọn. Bấm tiêu đề cột để sắp xếp.</p>
+    <p class="sub">Kết quả cho rổ đang chọn ở panel 04. Các cột dư địa, nút thắt, nhu cầu và bỏ lỡ là mức cơ sở, cột cuối áp dụng đòn bẩy đang chọn. Bấm tiêu đề cột để sắp xếp, bấm dòng để xem chi tiết.</p>
     <div class="tools">
       <label class="sr" for="q">Tìm mã hoặc tên</label>
       <input id="q" type="search" placeholder="Tìm mã hoặc tên">
       <label class="sr" for="fBind">Lọc theo nút thắt</label>
       <select id="fBind"><option value="all">Mọi nút thắt</option><option value="room">Room</option><option value="float">Free float</option><option value="liq">Thanh khoản</option></select>
-      <button class="btn" id="csv">Tải CSV</button>
+      <button class="btn pri" id="csv" type="button">Tải CSV</button>
       <span class="small" id="tblCount"></span>
     </div>
-    <div class="tbl-wrap"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+    <div class="tbl-wrap" style="max-height:520px"><table id="tbl"><thead></thead><tbody></tbody></table></div>
   </div>
 
   <div class="notes">
     <div class="card">
       <h3>Dư địa được tính thế nào</h3>
       <ul>
-        <li>R = room nước ngoài còn lại × vốn hóa. F = tỷ lệ free float × vốn hóa. L = p × giá trị giao dịch bình quân mỗi phiên × H.</li>
+        <li>R = room nước ngoài còn lại × vốn hóa. F = tỷ lệ free float × vốn hóa. L = p × giá trị giao dịch khớp lệnh bình quân mỗi phiên × H.</li>
         <li>Dư địa hấp thụ của mã là nhỏ nhất của R, F, L. Giới hạn nhỏ nhất là nút thắt của mã.</li>
-        <li>Nhu cầu mô phỏng của mã = mục tiêu × (F của mã ÷ tổng F của rổ), tức phân bổ theo vốn hóa tự do chuyển nhượng. Hấp thụ = nhỏ nhất của nhu cầu và dư địa.</li>
+        <li>Nhu cầu mô phỏng của mã = mục tiêu × (F của mã ÷ tổng F của rổ). Hấp thụ = nhỏ nhất của nhu cầu và dư địa.</li>
         <li>Độ phủ = tổng hấp thụ ÷ mục tiêu. Phần bỏ lỡ = nhu cầu trừ hấp thụ.</li>
-        <li>Đòn bẩy: room mới = room + Δ, không vượt phần chưa do khối ngoại nắm. Free float mới = free float + Δ. Giá trị giao dịch mới = giá trị giao dịch × (1 + g) × (free float mới ÷ free float cũ) mũ độ co giãn.</li>
-        <li>Đây là chỉ báo về dư địa theo giả định, không phải dự báo dòng vốn.</li>
+        <li>Đòn bẩy: room mới = room + Δ, không vượt phần chưa do khối ngoại nắm. Free float mới = free float + Δ. Thanh khoản mới = thanh khoản × (1 + g) × (free float mới ÷ free float cũ) mũ độ co giãn.</li>
       </ul>
-      <h3>Cách đọc bằng chứng ở panel 02</h3>
-      <p>Tỷ trọng thỏa thuận = giá trị mua và bán thỏa thuận của khối ngoại ÷ tổng giá trị mua và bán của khối ngoại, gộp theo nhóm. Đây là quan hệ thống kê trên số liệu thực tế, chưa chứng minh quan hệ nhân quả.</p>
+      <h3>Cách đọc bằng chứng</h3>
+      <p>Tỷ trọng thỏa thuận = giá trị mua và bán thỏa thuận của khối ngoại ÷ tổng giá trị mua và bán của khối ngoại. Panel 02 mô tả, panel 03 kiểm định bằng mô hình. Cả hai là quan hệ thống kê, chưa phải quan hệ nhân quả.</p>
     </div>
     <div class="card">
       <h3>Giới hạn và dữ liệu thiếu</h3>
       <ul>
-        <li>Free float của FiinQuant có thể đã gồm phần khối ngoại đang nắm, nên F là mức trần.</li>
-        <li>Thanh khoản dùng giá trị giao dịch khớp lệnh bình quân (không tính thỏa thuận, vì quỹ thụ động mua trên sổ lệnh). Cửa sổ do nhà cung cấp quyết định; đối chiếu với dữ liệu ngày cho thấy tương ứng khoảng 20 đến 30 phiên. Thanh khoản của một số mã lớn thay đổi mạnh theo cửa sổ, ví dụ VIC bình quân 60 phiên cao gần gấp đôi bình quân một tháng.</li>
-        <li>p, H và độ co giãn là giả định của nhóm. Bản đồ nhiệt ở panel 03 cho thấy kết quả đổi thế nào khi các giả định đổi.</li>
-        <li>Phân bổ nhu cầu theo free float là mô phỏng. Danh mục thật của FTSE gồm 27 mã HOSE và loại các mã còn dưới 20% headroom; panel 03 có lựa chọn rổ FTSE 27 mã để so sánh.</li>
-        <li>Dòng vốn theo tháng có cho 124 mã lớn nhất. Trong đó 88 mã niêm yết trên HOSE chiếm 92,0% ròng khối ngoại của HOSE. Ròng của HOSE lấy theo VN-Index, cả ba sàn cộng thêm HNXINDEX và UPCOMINDEX. Tháng 11 tính đến 19/11. Room lấy theo cuối tháng.</li>
-        <li>25 mã trong nhóm 400 mã không có giá trị giao dịch khớp lệnh bình quân và bị loại khỏi rổ bởi ngưỡng thanh khoản.</li>
-        <li>Một mã có thể chiếm phần lớn phần bỏ lỡ của cả rổ (ở thiết lập mặc định là VIC), nên hãy đọc cùng danh sách ở panel 03 chứ không chỉ đọc tổng.</li>
+        <li>Free float của nhà cung cấp có thể đã gồm phần khối ngoại đang nắm, nên F là mức trần.</li>
+        <li>Thanh khoản dùng giá trị giao dịch khớp lệnh bình quân, vì quỹ thụ động mua trên sổ lệnh. Cửa sổ tính do nhà cung cấp quyết định, đối chiếu dữ liệu ngày cho thấy khoảng 20 đến 30 phiên.</li>
+        <li>p, H và độ co giãn là giả định của nhóm. Bản đồ nhiệt ở panel 04 cho thấy kết quả đổi thế nào khi giả định đổi.</li>
+        <li>Phân bổ nhu cầu theo free float là mô phỏng. Rổ FTSE 27 mã là danh mục thật, có thể chọn ở panel 04.</li>
+        <li>Dòng vốn theo tháng có cho 124 mã lớn nhất. Ròng của HOSE lấy theo VN-Index, cả ba sàn cộng thêm HNXINDEX và UPCOMINDEX. Tháng 11 tính đến 19/11. Room lấy theo cuối tháng.</li>
+        <li id="missNote"></li>
+        <li>Một mã có thể chiếm phần lớn phần bỏ lỡ của cả rổ (MWG ở thiết lập mặc định, VIC ở kịch bản US$6 tỷ), nên hãy đọc cùng danh sách mã chứ không chỉ đọc tổng.</li>
       </ul>
       <h3>Nguồn dữ liệu</h3>
-      <p>FiinQuantX: screen_stocks và get_equity_snapshot cho vốn hóa, room, sở hữu nước ngoài, free float, giá trị giao dịch bình quân. get_market_statistics (foreign_flow, theo tháng) cho dòng vốn ngoại khớp lệnh và thỏa thuận. Ngày chốt 19/11/2026. Dữ liệu chỉ dùng cho mục đích cuộc thi theo điều khoản của nhà cung cấp.</p>
+      <p>FiinQuantX: screen_stocks và get_equity_snapshot cho vốn hóa, room, sở hữu nước ngoài, free float, giá trị giao dịch bình quân; get_market_statistics (foreign_flow theo tháng) cho dòng vốn ngoại khớp lệnh và thỏa thuận. Chốt 19/11/2026, chỉ dùng cho mục đích cuộc thi.</p>
     </div>
   </div>
 </section>
 </main>
 
 <footer>
-  <p><b>Sử dụng AI:</b> dashboard này được dựng với sự hỗ trợ của Claude (Anthropic) từ một prompt viết theo mẫu của hackathon (sáu phần ROLE, CONTEXT, TASK, DATA, OUTPUT, QUALITY CHECKS), chạy từng giai đoạn và kiểm số trước khi vẽ. Số liệu lấy từ FiinQuantX, nhóm chịu trách nhiệm về nội dung và việc diễn giải.</p>
-  <p>Sản phẩm của Nhóm 7 tại VietLeap Hackathon 2026, chủ đề From Data to Decision. Người ra quyết định: Ủy ban Chứng khoán Nhà nước, Bộ Tài chính.</p>
+  <p><b>Sử dụng AI:</b> dashboard được dựng với sự hỗ trợ của Claude (Anthropic) từ prompt viết theo mẫu của hackathon (sáu phần ROLE, CONTEXT, TASK, DATA, OUTPUT, QUALITY CHECKS), chạy từng giai đoạn và kiểm số trước khi vẽ. Số liệu lấy từ FiinQuantX, nhóm chịu trách nhiệm về nội dung và việc diễn giải.</p>
+  <p>Nhóm 7, VietLeap Hackathon 2026, chủ đề From Data to Decision. Người ra quyết định: Ủy ban Chứng khoán Nhà nước, Bộ Tài chính. Phương pháp đầy đủ: <a href="docs/nghich_ly_nang_hang.html">báo cáo kinh tế lượng</a>.</p>
 </footer>
 <div id="tip" role="tooltip"></div>
 
@@ -469,6 +653,27 @@ const BIND={liq:{n:'Thanh khoản',cls:'c-liq',shape:'c',lever:'cải thiện th
 const stocks=DATA.stocks, byT={}; stocks.forEach(s=>byT[s.t]=s);
 const sw=k=>`<i class="sw ${BIND[k].shape==='c'?'c ':BIND[k].shape==='t'?'t ':''}${BIND[k].cls}"></i>`;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- kết quả kinh tế lượng (báo cáo R, docs/nghich_ly_nang_hang.html) ---------- */
+const ECON={
+  m2:{b:.2315,se:.0680,p:'< 0,001'}, m2n:{b:-.0022,se:.0174,p:'0,898'}, m4:{b:.2235,se:.0939,p:'0,019'}, ape5:.191,
+  forest:[ // [nhãn, β, SE, nhóm]
+    ['Cơ sở M2: hiệu ứng cố định tháng',.2315,.0680,'a'],
+    ['Trọng số theo giá trị giao dịch',.1945,.0485,'a'],
+    ['Ngưỡng room cạn 15%',.1909,.0654,'a'],
+    ['Ngưỡng room cạn 5%',.2954,.0864,'a'],
+    ['Ngưỡng room cạn hẳn 1%',.3776,.1288,'a'],
+    ['Bỏ TCB',.2218,.0807,'a'],
+    ['Bỏ tháng 10, nhiều giao dịch khối lớn',.2206,.0599,'a'],
+    ['Bỏ tháng giao dịch ngoại dưới 10 tỷ',.2608,.0704,'a'],
+    ['Sai số chuẩn cụm hai chiều',.2315,.0648,'a'],
+    ['M4: hiệu ứng cố định mã và tháng',.2235,.0939,'b'],
+    ['M4 bỏ ABB',.2195,.0992,'b'],['M4 bỏ ACB',.2633,.0899,'b'],['M4 bỏ MSB',.1073,.0522,'b'],['M4 bỏ VIB',.2550,.1110,'b']],
+  cliff:[['Dưới 15%',.1909,.0654],['Dưới 10%',.2315,.0680],['Dưới 5%',.2954,.0864],['Dưới 1%',.3776,.1288]],
+  logit:{or:7.818,lo:2.871,hi:21.288,ape:.148,p:[.177,.024,.028],ev:44,n:1169,auc:.738},
+  kw:97.33,
+  cs:[['Room còn lại','0,799','1,331','0,549','0,260','0,786','0,349'],['Tăng giá từ đầu năm','3,435','1,260','0,007','2,744','0,002','0,001']]
+};
 
 /* ---------- mô hình ---------- */
 function calc(s,o){
@@ -495,9 +700,10 @@ function opts(){return {N:S.N,stage:S.stage,H:S.H,p:S.p,dr:S.dr,df:S.df,g:S.g,ep
 function niceStep(range,n){const raw=range/n,mag=Math.pow(10,Math.floor(Math.log10(raw))),f=raw/mag;return (f<1.5?1:f<3?2:f<7?5:10)*mag;}
 function rp(x,y,w,h,rt,rb){rt=Math.min(rt,w/2,h);rb=Math.min(rb,w/2,h);
   return `M${x+rt},${y}H${x+w-rt}${rt?`Q${x+w},${y} ${x+w},${y+rt}`:''}V${y+h-rb}${rb?`Q${x+w},${y+h} ${x+w-rb},${y+h}`:''}H${x+rb}${rb?`Q${x},${y+h} ${x},${y+h-rb}`:''}V${y+rt}${rt?`Q${x},${y} ${x+rt},${y}`:''}Z`;}
+const W_=el=>Math.max(260,el.clientWidth||el.parentNode.clientWidth||600);
 
 function stacked(el,o){
-  const W=Math.max(260,el.clientWidth), Hh=o.h||280, m={l:o.ml||44,r:10,t:o.mt||26,b:34};
+  const W=W_(el), Hh=o.h||280, m={l:o.ml||44,r:10,t:o.mt||26,b:30};
   const n=o.labels.length, iw=W-m.l-m.r, ih=Hh-m.t-m.b, band=iw/n;
   let lo=0,hi=0;
   for(let i=0;i<n;i++){const a=(o.A[i]||0)/o.div,b=(o.B[i]||0)/o.div; hi=Math.max(hi,Math.max(a,0)+Math.max(b,0)); lo=Math.min(lo,Math.min(a,0)+Math.min(b,0));}
@@ -505,50 +711,51 @@ function stacked(el,o){
   const step=niceStep((hi-lo)||1,4); const tlo=Math.floor(lo/step)*step, thi=Math.ceil(hi/step)*step;
   const y=v=>m.t+ih*(thi-v)/(thi-tlo||1);
   let g='';
-  for(let v=tlo;v<=thi+1e-9;v+=step){const yy=y(v); g+=`<line class="${Math.abs(v)<1e-9?'ax':'gl'}" x1="${m.l}" x2="${W-m.r}" y1="${yy}" y2="${yy}"/><text x="${m.l-6}" y="${yy+4}" text-anchor="end">${fmt(v,step<1?1:0)}</text>`;}
-  let bars='',hits='',lab='';
-  const bw=Math.min(o.maxw||36,band*.62);
+  for(let v=tlo;v<=thi+1e-9;v+=step){const yy=y(v); g+=`<line class="${Math.abs(v)<1e-9?'ax':'gl'}" x1="${m.l}" x2="${W-m.r}" y1="${yy}" y2="${yy}"/><text x="${m.l-8}" y="${yy+4}" text-anchor="end">${fmt(v,step<1?1:0)}</text>`;}
+  let bars='',hits='',lab='',dots='';
+  const bw=Math.min(o.maxw||40,band*.6);
   for(let i=0;i<n;i++){
     const a=o.A[i],b=o.B[i]; const x=m.l+band*i+(band-bw)/2;
     if(a==null&&b==null){continue;}
-    const segs=[[a||0,'f-neu'],[b||0,'f-deal']]; let pa=0,na=0; const L=[];
+    const segs=[[a||0,'f-match'],[b||0,'f-deal']]; let pa=0,na=0; const L=[];
     segs.forEach(([v,cl])=>{v=v/o.div; if(v>=0){L.push({y0:pa,y1:pa+v,cl,pos:true}); pa+=v;} else {L.push({y0:na,y1:na+v,cl,pos:false}); na+=v;}});
     const lastPos=L.map((s,k)=>s.pos&&Math.abs(s.y1-s.y0)>1e-9?k:-1).filter(k=>k>=0).pop();
     const lastNeg=L.map((s,k)=>!s.pos&&Math.abs(s.y1-s.y0)>1e-9?k:-1).filter(k=>k>=0).pop();
     L.forEach((s,k)=>{const top=y(Math.max(s.y0,s.y1)),bot=y(Math.min(s.y0,s.y1)),h=bot-top; if(h<.3)return;
-      const rt=(s.pos&&k===lastPos)?4:0, rb=(!s.pos&&k===lastNeg)?4:0;
-      bars+=`<path class="${s.cl}" d="${rp(x,top,bw,h,rt,rb)}" style="stroke:var(--surface);stroke-width:1.5"/>`;});
+      const rt=(s.pos&&k===lastPos)?3:0, rb=(!s.pos&&k===lastNeg)?3:0;
+      bars+=`<path class="${s.cl}" d="${rp(x,top,bw,h,rt,rb)}" style="stroke:var(--surface);stroke-width:2"/>`;});
     const tot=((a||0)+(b||0))/o.div;
+    if(o.dots) dots+=`<circle cx="${x+bw/2}" cy="${y(tot)}" r="4.5" fill="#fff" stroke="var(--ink)" stroke-width="2"/>`;
     hits+=`<rect class="hit" x="${m.l+band*i}" y="${m.t}" width="${band}" height="${ih}" data-tip="${esc(o.tip(i))}"/>`;
-    if(o.label&&o.label(i)){const yy=tot<0?y(na)+13:y(pa)-5; lab+=`<text class="ink" x="${x+bw/2}" y="${yy}" text-anchor="middle" style="font-weight:600">${esc(o.label(i))}</text>`;}
+    if(o.label&&o.label(i)){const yy=tot<0?y(na)+16:y(pa)-7; lab+=`<text class="ink" x="${x+bw/2}" y="${yy}" text-anchor="middle" style="font-weight:600;font-family:var(--mono)">${esc(o.label(i))}</text>`;}
   }
-  let xl=''; for(let i=0;i<n;i++){xl+=`<text x="${m.l+band*i+band/2}" y="${Hh-8}" text-anchor="middle">${o.labels[i]}</text>`;}
-  let mk=''; if(o.marker){const mx=m.l+band*o.marker.i+band*o.marker.f; mk=`<line x1="${mx}" x2="${mx}" y1="${m.t-6}" y2="${m.t+ih}" stroke="var(--ink-2)" stroke-dasharray="4 3" stroke-width="1"/><text class="ink" x="${mx-5}" y="${m.t-10}" text-anchor="end">${esc(o.marker.t)}</text>`;}
-  el.innerHTML=`<svg viewBox="0 0 ${W} ${Hh}" width="${W}" height="${Hh}" role="img" aria-label="${esc(o.aria)}">${g}${bars}${lab}${mk}${xl}${hits}</svg>`;
+  let xl=''; for(let i=0;i<n;i++){xl+=`<text x="${m.l+band*i+band/2}" y="${Hh-8}" text-anchor="middle">${band<34?o.labels[i].replace('T',''):o.labels[i]}</text>`;}
+  let mk=''; if(o.marker){const mx=m.l+band*o.marker.i+band*o.marker.f; mk=`<line x1="${mx}" x2="${mx}" y1="${m.t-8}" y2="${m.t+ih}" stroke="var(--ink)" stroke-dasharray="4 3" stroke-width="1"/><text class="ink" x="${mx-6}" y="${m.t-12}" text-anchor="end" style="font-weight:500">${esc(o.marker.t)}</text>`;}
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${Hh}" width="${W}" height="${Hh}" role="img" aria-label="${esc(o.aria)}">${g}${bars}${dots}${lab}${mk}${xl}${hits}</svg>`;
 }
-function lineMulti(el,o){ // o: labels, series:[{name,V,color}], max, h, tip, aria
-  const W=Math.max(220,el.clientWidth), Hh=o.h||170, m={l:36,r:10,t:12,b:24}, n=o.labels.length, iw=W-m.l-m.r, ih=Hh-m.t-m.b, band=iw/n;
+function lineMulti(el,o){
+  const W=W_(el), Hh=o.h||170, m={l:38,r:12,t:12,b:26}, n=o.labels.length, iw=W-m.l-m.r, ih=Hh-m.t-m.b, band=iw/n;
   const y=v=>m.t+ih*(1-v/o.max);
-  let g=''; [0,.25,.5,.75,1].forEach(f=>{const v=o.max*f,yy=y(v); g+=`<line class="${f===0?'ax':'gl'}" x1="${m.l}" x2="${W-m.r}" y1="${yy}" y2="${yy}"/><text x="${m.l-5}" y="${yy+4}" text-anchor="end">${fmt(v,0)}</text>`;});
+  let g=''; [0,.25,.5,.75,1].forEach(f=>{const v=o.max*f,yy=y(v); g+=`<line class="${f===0?'ax':'gl'}" x1="${m.l}" x2="${W-m.r}" y1="${yy}" y2="${yy}"/><text x="${m.l-6}" y="${yy+4}" text-anchor="end">${fmt(v,0)}</text>`;});
   let paths='',dots='',hits='',xl='';
-  for(let i=0;i<n;i++){const x=m.l+band*i+band/2; if(i%2===0||n<6) xl+=`<text x="${x}" y="${Hh-6}" text-anchor="middle">${o.labels[i]}</text>`;
+  for(let i=0;i<n;i++){const x=m.l+band*i+band/2; if(i%2===0||W>460) xl+=`<text x="${x}" y="${Hh-6}" text-anchor="middle">${o.labels[i]}</text>`;
     hits+=`<rect class="hit" x="${m.l+band*i}" y="${m.t}" width="${band}" height="${ih}" data-tip="${esc(o.tip(i))}"/>`;}
   o.series.forEach(se=>{let d='',pen=false;
     for(let i=0;i<n;i++){const v=se.V[i]; if(v==null){pen=false;continue;} const x=m.l+band*i+band/2; d+=(pen?'L':'M')+x+','+y(v); pen=true; dots+=`<circle cx="${x}" cy="${y(v)}" r="4" fill="${se.color}" stroke="var(--surface)" stroke-width="2"/>`;}
-    paths+=`<path d="${d}" fill="none" stroke="${se.color}" stroke-width="2" stroke-linejoin="round"/>`;});
+    paths+=`<path d="${d}" fill="none" stroke="${se.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;});
   el.innerHTML=`<svg viewBox="0 0 ${W} ${Hh}" width="${W}" height="${Hh}" role="img" aria-label="${esc(o.aria)}">${g}${paths}${dots}${xl}${hits}</svg>`;
 }
 function scatter(el){
-  const W=Math.max(300,el.clientWidth), Hh=Math.round(Math.min(290,Math.max(220,W*.5))), m={l:38,r:10,t:16,b:34};
+  const W=W_(el), Hh=Math.round(Math.min(320,Math.max(230,W*.55))), m={l:40,r:12,t:20,b:38};
   const iw=W-m.l-m.r, ih=Hh-m.t-m.b, x=v=>m.l+iw*v, y=v=>m.t+ih*(1-v);
-  let g=''; [0,.25,.5,.75,1].forEach(f=>{g+=`<line class="${f===0?'ax':'gl'}" x1="${m.l}" x2="${W-m.r}" y1="${y(f)}" y2="${y(f)}"/><text x="${m.l-6}" y="${y(f)+4}" text-anchor="end">${fmt(f*100,0)}</text><text x="${x(f)}" y="${Hh-18}" text-anchor="middle">${fmt(f*100,0)}</text>`;});
-  g+=`<text class="ink" x="${m.l+iw/2}" y="${Hh-3}" text-anchor="middle" style="font-size:10px">Room còn lại, % tổng room</text>`;
-  let b=''; [.1,.3].forEach(v=>{b+=`<line x1="${x(v)}" x2="${x(v)}" y1="${m.t-6}" y2="${m.t+ih}" stroke="var(--ink-2)" stroke-dasharray="4 3" stroke-width="1"/>`;});
-  b+=`<line x1="${x(.2)}" x2="${x(.2)}" y1="${m.t-6}" y2="${m.t+ih}" stroke="var(--ink)" stroke-width="1.5"/><text class="ink" x="${x(.2)+4}" y="${m.t+2}" style="font-size:10px;paint-order:stroke;stroke:var(--surface);stroke-width:4px">Ngưỡng FTSE 20%</text>`;
+  let g=''; [0,.25,.5,.75,1].forEach(f=>{g+=`<line class="${f===0?'ax':'gl'}" x1="${m.l}" x2="${W-m.r}" y1="${y(f)}" y2="${y(f)}"/><text x="${m.l-6}" y="${y(f)+4}" text-anchor="end">${fmt(f*100,0)}</text><text x="${x(f)}" y="${Hh-20}" text-anchor="middle">${fmt(f*100,0)}</text>`;});
+  g+=`<text class="lab" x="${m.l+iw/2}" y="${Hh-3}" text-anchor="middle">Room còn lại, % tổng room</text>`;
+  let b=''; [.1,.3].forEach(v=>{b+=`<line x1="${x(v)}" x2="${x(v)}" y1="${m.t-6}" y2="${m.t+ih}" stroke="var(--ink-2)" stroke-dasharray="3 3" stroke-width="1"/><text x="${x(v)+4}" y="${m.t+ih-6}">${fmt(v*100,0)}%</text>`;});
+  b+=`<line x1="${x(.2)}" x2="${x(.2)}" y1="${m.t-8}" y2="${m.t+ih}" stroke="var(--ink)" stroke-width="1.5"/><text class="ink" x="${x(.2)+5}" y="${m.t-6}" style="font-size:11.5px;font-weight:500;paint-order:stroke;stroke:var(--surface);stroke-width:4px">Ngưỡng FTSE 20%</text>`;
   let gray='',or='';
   SCAT.forEach(p=>{const tt=`${p.t}, ${MON[p.i]}\nRoom còn ${pct(p.r,1)} tổng room\nThỏa thuận chiếm ${pct(p.d,0)} giao dịch ngoại`;
-    const c=`<circle cx="${x(Math.min(1,p.r))}" cy="${y(p.d)}" r="3.2" data-tip="${esc(tt)}" style="stroke:transparent;stroke-width:5"`;
-    if(p.r<.1) or+=c+` fill="var(--s2)" fill-opacity=".8"/>`; else gray+=c+` fill="var(--neu)" fill-opacity=".5"/>`;});
+    const c=`<circle cx="${x(Math.min(1,p.r))}" cy="${y(p.d)}" r="3.4" data-tip="${esc(tt)}" style="stroke:transparent;stroke-width:6"`;
+    if(p.r<.1) or+=c+` fill="var(--room)" fill-opacity=".85"/>`; else gray+=c+` fill="#8E9A93" fill-opacity=".45"/>`;});
   el.innerHTML=`<svg viewBox="0 0 ${W} ${Hh}" width="${W}" height="${Hh}" role="img" aria-label="Biểu đồ phân tán: room còn lại và tỷ trọng thỏa thuận của từng mã theo tháng">${g}${gray}${or}${b}</svg>`;
 }
 
@@ -563,107 +770,173 @@ document.addEventListener('scroll',()=>tip.style.display='none',{passive:true});
 /* ---------- số liệu cố định theo dữ liệu ---------- */
 const MO=DATA.monthly, YALL=MO.reduce((a,d)=>a+d.net+(d.oth||0),0), negAll=MO.filter(d=>d.net+(d.oth||0)<0).length, YTD=MO.reduce((a,d)=>a+d.net,0), YM=MO.reduce((a,d)=>a+d.nm,0), YD=MO.reduce((a,d)=>a+d.nd,0);
 const negMonths=MO.filter(d=>d.net<0).length;
+const signP=(()=>{let p=0; const n=MO.length; const C=(n,k)=>{let r=1; for(let i=1;i<=k;i++) r=r*(n-k+i)/i; return r;}; for(let k=negMonths;k<=n;k++) p+=C(n,k)*Math.pow(.5,n); return p;})();
 let minI=0; MO.forEach((d,i)=>{if(d.net<MO[minI].net)minI=i;});
-const FL=stocks.filter(s=>s.flow), FLNET=FL.reduce((a,s)=>a+s.net,0), FLH=FL.filter(s=>s.ex==='HOSE'), FLHNET=FLH.reduce((a,s)=>a+s.net,0);
+const FL=stocks.filter(s=>s.flow), FLH=FL.filter(s=>s.ex==='HOSE'), FLHNET=FLH.reduce((a,s)=>a+s.net,0);
 const sellers=FL.filter(s=>s.net<0).sort((a,b)=>a.net-b.net), buyers=FL.filter(s=>s.net>0).sort((a,b)=>b.net-a.net);
 const top10sell=sellers.slice(0,10).reduce((a,s)=>a+s.net,0), allsell=sellers.reduce((a,s)=>a+s.net,0);
 const SCAT=[]; FL.forEach(s=>s.flow.forEach((f,i)=>{if(f&&f[2]!=null&&f[3]!=null) SCAT.push({t:s.t,i,r:f[2],d:f[3]});}));
 const E=DATA.evidence;
 const statHtml=(k,v,u,n)=>`<div class="stat"><span class="stat-k">${k}</span><span class="stat-v">${v}${u?`<span class="u">${u}</span>`:''}</span><span class="stat-n">${n}</span></div>`;
+const pv=p=>p<.001?'< 0,001':fmt(p,p<.01?4:3);
 
 function drawStatic(){
-  $('#lede1').innerHTML=`Từ đầu năm đến 19/11/2026, khối ngoại bán ròng <b>${fmt(K(-YTD),1)} nghìn tỷ đồng</b> trên sàn HOSE, và <b>${negMonths} trên ${MO.length} tháng</b> đều âm, kể cả tháng 9 khi nâng hạng của FTSE có hiệu lực. Tính cả HNX và UPCoM, con số là ${fmt(K(-YALL),1)} nghìn tỷ đồng và ${negAll} trên ${MO.length} tháng vẫn âm. Trên HOSE, <b>${pct(YD/YTD,0)}</b> phần bán ròng đi qua thỏa thuận, kênh giao dịch không đi qua sổ lệnh khớp.`;
+  $('#h1t').textContent=`Khối ngoại bán ròng ${negMonths} trên ${MO.length} tháng, kể cả sau khi nâng hạng có hiệu lực`;
+  $('#lede1').innerHTML=`Từ 1/1 đến 19/11/2026, khối ngoại bán ròng <b>${fmt(K(-YTD),1)} nghìn tỷ đồng</b> trên sàn HOSE. Tính cả HNX và UPCoM là ${fmt(K(-YALL),1)} nghìn tỷ, và ${negAll} trên ${MO.length} tháng vẫn âm. Nếu dòng vốn chỉ dao động ngẫu nhiên quanh 0, xác suất để ${negMonths} tháng đều âm là <b>${fmt(signP,5)}</b>.`;
   $('#stats1').innerHTML=
-    statHtml('Ròng khối ngoại HOSE, 1/1 đến 19/11',fmt(K(YTD),1),'nghìn tỷ',`Khớp lệnh ${fmt(K(YM),1)}, thỏa thuận ${fmt(K(YD),1)}. Cả ba sàn: ${fmt(K(YALL),1)}.`)+
-    statHtml('Tháng bán mạnh nhất',MON[minI].replace('*',''),'',`Ròng ${fmt(K(MO[minI].net),1)} nghìn tỷ. Tháng 9 ròng ${fmt(K(MO[8].net),1)}.`)+
-    statHtml('Đi qua thỏa thuận',pct(YD/YTD,0),'',`${fmt(K(YD),1)} trên ${fmt(K(YTD),1)} nghìn tỷ của ròng cả kỳ.`)+
-    statHtml(`Tập trung ở ${FLH.length} mã HOSE lớn nhất`,pct(FLHNET/YTD,1),'',`Phần ròng HOSE nằm ở ${FLH.length} mã. Mười mã bán nhiều nhất chiếm ${pct(top10sell/allsell,0)} tổng bán ròng của nhóm mã bán ròng.`);
+    statHtml('Ròng HOSE, 1/1 đến 19/11',fmt(K(YTD),1),'nghìn tỷ',`Khớp lệnh ${fmt(K(YM),1)}, thỏa thuận ${fmt(K(YD),1)}. Cả ba sàn ${fmt(K(YALL),1)}.`)+
+    statHtml('Tháng bán mạnh nhất',MON[minI].replace('*',''),'',`Ròng ${fmt(K(MO[minI].net),1)} nghìn tỷ, sau ngày hiệu lực. Tháng 9 ròng ${fmt(K(MO[8].net),1)}.`)+
+    statHtml('Đi qua thỏa thuận',pct(YD/YTD,0),'',`${fmt(K(YD),1)} trên ${fmt(K(YTD),1)} nghìn tỷ ròng cả kỳ, phần còn lại qua khớp lệnh.`)+
+    statHtml(`Ở ${FLH.length} mã HOSE lớn nhất`,pct(FLHNET/YTD,1),'',`Mười mã bán nhiều nhất chiếm ${pct(top10sell/allsell,0)} tổng bán ròng của nhóm mã bán ròng.`);
+  // giai đoạn
+  const per=(lab,a,b)=>{const L=MO.slice(a,b), n=L.length, net=L.reduce((s,d)=>s+d.net,0), nd=L.reduce((s,d)=>s+d.nd,0), buy=L.reduce((s,d)=>s+d.buy,0), sell=L.reduce((s,d)=>s+d.sell,0);
+    return `<div class="per"><h4>${lab}</h4><div class="big">${fmt(K(net/n),1)}<small>nghìn tỷ/tháng</small></div><p>Thỏa thuận ${pct(nd/net,0)} của ròng. Mua bằng ${pct(buy/sell,0)} bán.</p></div>`;};
+  $('#periods').innerHTML=per('T1 đến T8, trước',0,8)+per('T9, tháng hiệu lực',8,9)+per('T10 đến T11, sau',9,11);
   // bảng tháng
-  let h='<table><thead><tr><th class="l">Tháng</th><th>Mua</th><th>Bán</th><th>Ròng khớp lệnh</th><th>Ròng thỏa thuận</th><th>Tổng ròng</th></tr></thead><tbody>';
-  MO.forEach((d,i)=>{h+=`<tr><td class="l">${MON[i]}</td><td>${fmt(K(d.buy),1)}</td><td>${fmt(K(d.sell),1)}</td><td>${fmt(K(d.nm),1)}</td><td>${fmt(K(d.nd),1)}</td><td>${fmt(K(d.net),1)}</td></tr>`;});
-  h+=`<tr><td class="l"><b>Cộng</b></td><td>${fmt(K(MO.reduce((a,d)=>a+d.buy,0)),1)}</td><td>${fmt(K(MO.reduce((a,d)=>a+d.sell,0)),1)}</td><td><b>${fmt(K(YM),1)}</b></td><td><b>${fmt(K(YD),1)}</b></td><td><b>${fmt(K(YTD),1)}</b></td></tr></tbody></table><p class="small" style="padding:6px 9px;margin:0">Đơn vị nghìn tỷ đồng. T11 tính đến 19/11.</p>`;
+  let h='<table><thead><tr><th class="l">Tháng</th><th>Mua</th><th>Bán</th><th>Ròng khớp lệnh</th><th>Ròng thỏa thuận</th><th>Tổng ròng HOSE</th><th>HNX và UPCoM</th></tr></thead><tbody>';
+  MO.forEach((d,i)=>{h+=`<tr><td class="l">${MON[i]}</td><td>${fmt(K(d.buy),1)}</td><td>${fmt(K(d.sell),1)}</td><td>${fmt(K(d.nm),1)}</td><td>${fmt(K(d.nd),1)}</td><td>${fmt(K(d.net),1)}</td><td>${fmt(K(d.oth||0),2)}</td></tr>`;});
+  h+=`<tr class="tot"><td class="l">Cộng</td><td>${fmt(K(MO.reduce((a,d)=>a+d.buy,0)),1)}</td><td>${fmt(K(MO.reduce((a,d)=>a+d.sell,0)),1)}</td><td>${fmt(K(YM),1)}</td><td>${fmt(K(YD),1)}</td><td>${fmt(K(YTD),1)}</td><td>${fmt(K(YALL-YTD),2)}</td></tr></tbody></table><p class="small" style="padding:8px 10px;margin:0">Nghìn tỷ đồng. T11 tính đến 19/11.</p>`;
   $('#flowTable').innerHTML=h;
   // movers
-  const rows=sellers.slice(0,10).map(s=>[s,'s']).concat(buyers.slice(0,6).map(s=>[s,'b']));
   const mS=Math.abs(sellers[0].net), mB=buyers[0].net, z=mS/(mS+mB)*100, sc=(mS+mB)/100;
-  const mv=([s,k])=>{const w=Math.abs(s.net)/sc; const st=k==='s'?`left:${z-w}%;width:${w}%;background:var(--neg)`:`left:${z}%;width:${w}%;background:var(--pos)`;
+  const mv=(s,k)=>{const w=Math.abs(s.net)/sc; const st=k==='s'?`left:${z-w}%;width:${w}%;background:var(--sell)`:`left:${z}%;width:${w}%;background:var(--buy)`;
     const tt=`${s.t}, ${s.n}\n${s.ind}\nRòng khối ngoại cả kỳ: ${fmt(K(s.net),2)} nghìn tỷ\nRoom còn ${pct(s.room)}, sở hữu ngoại ${pct(s.fown)}`;
     return `<div class="mv" data-tip="${esc(tt)}"><span class="t">${esc(s.t)}</span><span class="mvt"><span class="z" style="left:${z}%"></span><i style="${st}"></i></span><span class="v">${k==='s'?'':'+'}${fmt(K(s.net),1)}</span></div>`;};
-  $('#movers').innerHTML=`<div class="grp">Bán ròng nhiều nhất</div>`+rows.filter(r=>r[1]==='s').map(mv).join('')+`<div class="grp">Mua ròng nhiều nhất</div>`+rows.filter(r=>r[1]==='b').map(mv).join('');
-  $('#src1').innerHTML=`<b>Nguồn</b>FiinQuantX: ròng khối ngoại theo tháng của sàn HOSE (VN-Index), cộng HNXINDEX và UPCOMINDEX cho cả ba sàn (get_market_statistics, metric foreign_flow) và dữ liệu 124 mã lớn nhất (screen_stocks, get_equity_snapshot), chốt 19/11/2026. Ngày 21/9/2026, trong 27 mã được FTSE đưa vào chỉ số FTSE All-Cap, 21 mã được khối ngoại mua ròng, tổng khoảng 1,72 nghìn tỷ đồng, theo <a href="https://vietnamnews.vn/economy/1800133/foreign-inflows-offer-support-after-upgrade-but-macro-factors-remain-key.html" target="_blank" rel="noopener">Viet Nam News</a>. Một ngày mua ròng không đảo được xu hướng cả năm.`;
+  $('#movers').innerHTML=`<div class="grp">Bán ròng nhiều nhất</div>`+sellers.slice(0,10).map(s=>mv(s,'s')).join('')+`<div class="grp">Mua ròng nhiều nhất</div>`+buyers.slice(0,6).map(s=>mv(s,'b')).join('');
+  $('#moversRead').innerHTML=`<b class="rl">Cách đọc</b>Dòng bán tập trung ở một số ít mã vốn hóa lớn: ${sellers.slice(0,3).map(s=>esc(s.t)).join(', ')} cộng lại bán ${fmt(K(-sellers.slice(0,3).reduce((a,s)=>a+s.net,0)),1)} nghìn tỷ. Không phải mã nào cũng bị bán.`;
+  $('#src1').innerHTML=`<b>Nguồn</b>FiinQuantX: ròng khối ngoại theo tháng của sàn HOSE (VN-Index), cộng HNXINDEX và UPCOMINDEX cho cả ba sàn (get_market_statistics, foreign_flow) và dữ liệu 124 mã lớn nhất, chốt 19/11/2026. Xác suất dùng kiểm định dấu một phía. Ngày 21/9/2026, trong 27 mã được FTSE đưa vào chỉ số, 21 mã được khối ngoại mua ròng, tổng khoảng 1,72 nghìn tỷ đồng theo <a href="https://vietnamnews.vn/economy/1800133/foreign-inflows-offer-support-after-upgrade-but-macro-factors-remain-key.html" target="_blank" rel="noopener">Viet Nam News</a>. Một ngày mua ròng không đảo được xu hướng cả năm.`;
 
   // panel 2
-  const g=E.gankin,r=E.rong,hh=E.hep;
-  $('#lede2').innerHTML=`Khi room nước ngoài còn dưới 10% tổng room, <b>${pct(g.pooled,1)}</b> giá trị giao dịch của khối ngoại đi qua thỏa thuận, so với <b>${pct(r.pooled,1)}</b> ở nhóm room còn từ 30% trở lên. Đây là quan hệ thống kê, chưa phải nhân quả, nhưng nó chỉ ra room là điểm nghẽn cần xử lý theo từng mã chứ không theo cả thị trường. Danh mục thật của FTSE xác nhận điều này: <b>cả 27 mã được chọn đều còn ít nhất 20% headroom</b> vào ngày chốt dữ liệu 30/6, còn các mã lớn như TCB, MBB, CTG, ACB và MWG bị loại vì dưới ngưỡng.`;
-  const rowsE=[['gankin','Room còn dưới 10% tổng room'],['hep','Room còn 10% đến 30%'],['rong','Room còn từ 30% trở lên']];
-  const mx=Math.max(...rowsE.map(x=>Math.max(E[x[0]].pooled,E[x[0]].median)));
-  $('#evidBars').innerHTML=rowsE.map(([k,l],i)=>{const e=E[k]; const cl=i===0?'c-room':'c-neu'; const tt=`${l}\n${e.n} quan sát mã theo tháng, ${e.stocks} mã\nGộp: ${pct(e.pooled)} giao dịch qua thỏa thuận\nTrung vị theo quan sát: ${pct(e.median)}\nRòng ngoại trên giá trị giao dịch: ${pct(e.netShare)}`;
-    return `<div class="bar-row" data-tip="${esc(tt)}"><div>${l}<span class="small">${e.n} quan sát, ${e.stocks} mã</span></div><div><div class="trk"><i class="fill ${cl}" style="width:${Math.max(2,e.pooled/mx*60)}%"></i><span class="v">${pct(e.pooled)}</span><span class="small" style="margin-left:6px">gộp theo giá trị</span></div><div class="trk"><i class="fill ${cl}" style="opacity:.4;width:${Math.max(2,e.median/mx*60)}%"></i><span class="v">${pct(e.median)}</span><span class="small" style="margin-left:6px">trung vị quan sát</span></div></div></div>`;}).join('');
+  const g=E.gankin,r=E.rong;
+  $('#lede2').innerHTML=`Khi room còn dưới 10% tổng room, <b>${pct(g.pooled,1)}</b> giá trị giao dịch của khối ngoại đi qua thỏa thuận, so với <b>${pct(r.pooled,1)}</b> khi room còn từ 30% trở lên. Danh mục thật của FTSE cho cùng tín hiệu: cả 27 mã được chọn đều còn từ 20% headroom, còn TCB, MBB, CTG, ACB và MWG bị loại.`;
+  const rowsE=[['gankin','Room còn dưới 10%','c-room'],['hep','Room còn 10% đến 30%','c-match'],['rong','Room còn từ 30% trở lên','c-match']];
+  const mx=Math.max(...rowsE.map(x=>E[x[0]].pooled));
+  $('#evidBars').innerHTML=rowsE.map(([k,l,cl])=>{const e=E[k]; const tt=`${l}\n${e.n} quan sát mã theo tháng, ${e.stocks} mã\nGộp: ${pct(e.pooled)} giao dịch qua thỏa thuận\nTrung vị theo quan sát: ${pct(e.median)}\nRòng ngoại trên giá trị giao dịch: ${pct(e.netShare)}`;
+    return `<div class="bar-row" data-tip="${esc(tt)}"><div><b style="font-weight:600">${l}</b><span class="small">${fmt(e.n,0)} quan sát, ${e.stocks} mã</span></div><div><div class="trk"><i class="fill ${cl}" style="width:${Math.max(2,e.pooled/mx*62)}%"></i><span class="v">${pct(e.pooled)}</span><span class="small">gộp</span></div><div class="trk"><i class="fill ${cl}" style="opacity:.4;width:${Math.max(1,e.median/mx*62)}%"></i><span class="v">${pct(e.median)}</span><span class="small">trung vị</span></div></div></div>`;}).join('');
   const hi=SCAT.filter(p=>p.r<.1), lo=SCAT.filter(p=>p.r>=.1);
   const sh=a=>a.filter(p=>p.d>=.5).length/a.length;
-  $('#scatRead').innerHTML=`<b>Cách đọc</b>Ở nhóm room dưới 10%, ${pct(sh(hi),0)} số quan sát có hơn một nửa giao dịch ngoại đi qua thỏa thuận, so với ${pct(sh(lo),0)} ở phần còn lại. Phần lớn chấm xám nằm sát đáy, nghĩa là khi room còn rộng khối ngoại giao dịch chủ yếu trên sổ lệnh khớp. Hai nét đứt là ngưỡng 10% và 30%. Vạch đậm là ngưỡng 20% headroom mà FTSE dùng để xét chọn mã mới.`;
+  $('#scatRead').innerHTML=`<b class="rl">Cách đọc</b>Ở nhóm room dưới 10%, ${pct(sh(hi),0)} số quan sát có hơn một nửa giao dịch ngoại qua thỏa thuận, so với ${pct(sh(lo),0)} ở phần còn lại. Phần lớn chấm xám nằm sát đáy: khi còn room, khối ngoại giao dịch trên sổ lệnh. Vạch đậm là ngưỡng 20% headroom FTSE dùng để xét chọn.`;
   const cnt={}; hi.forEach(p=>cnt[p.t]=(cnt[p.t]||0)+1);
   const lst=Object.entries(cnt).sort((a,b)=>b[1]-a[1]);
-  $('#roomList').innerHTML=`<p><b>${lst.length} mã</b> từng có room còn dưới 10% tổng room trong ít nhất một tháng: ${lst.map(([t,n])=>`${esc(t)} (${n} tháng)`).join(', ')}.</p><p>Đây là nhóm đáng xem xét đầu tiên khi cân nhắc nới room. Panel 03 cho thấy nới room thêm bao nhiêu điểm thì độ phủ nhu cầu vốn tăng bấy nhiêu.</p>`;
-  $('#src2').innerHTML=`<b>Nguồn</b>FiinQuantX, get_market_statistics (foreign_flow theo tháng, tách khớp lệnh và thỏa thuận) và get_equity_snapshot (room còn lại, sở hữu nước ngoài), chốt 19/11/2026. Room còn lại lấy theo cuối tháng. Mẫu gồm ${SCAT.length} quan sát mã theo tháng của 124 mã lớn nhất. Tháng 11 tính đến 19/11.`;
+  $('#roomList').innerHTML=`<p><b>${lst.length} mã</b> từng có room còn dưới 10% trong ít nhất một tháng: ${lst.map(([t,n])=>`${esc(t)} (${n})`).join(', ')}. Số trong ngoặc là số tháng.</p><p>Đây là nhóm nên xem đầu tiên khi cân nhắc nới room. Panel 04 cho thấy nới thêm bao nhiêu điểm thì độ phủ tăng bao nhiêu.</p>`;
+  $('#src2').innerHTML=`<b>Nguồn</b>FiinQuantX, get_market_statistics (foreign_flow theo tháng, tách khớp lệnh và thỏa thuận) và get_equity_snapshot (room còn lại, sở hữu nước ngoài), chốt 19/11/2026. Mẫu gồm ${fmt(SCAT.length,0)} quan sát mã theo tháng của 124 mã lớn nhất, room lấy theo cuối tháng. Danh sách 27 mã FTSE theo FAQ của FTSE Russell (v1.3, 25/8/2026).`;
+  const miss=stocks.filter(s=>!(s.adtv>0)).length;
+  $('#missNote').textContent=`${miss} mã trong nhóm 400 mã không có giá trị giao dịch khớp lệnh bình quân và tự rời khỏi rổ do ngưỡng thanh khoản.`;
 }
 
-/* ---------- vẽ theo từng panel ---------- */
+/* ---------- panel 01 ---------- */
 function drawP1(){
-  stacked($('#flowChart'),{labels:MON,A:MO.map(d=>d.nm),B:MO.map(d=>d.nd),div:1000,h:350,aria:'Ròng khối ngoại theo tháng, tách khớp lệnh và thỏa thuận, nghìn tỷ đồng',
-    marker:{i:8,f:.7,t:'21/9: FTSE hiệu lực'},
+  stacked($('#flowChart'),{labels:MON,A:MO.map(d=>d.nm),B:MO.map(d=>d.nd),div:1000,h:340,dots:true,aria:'Ròng khối ngoại sàn HOSE theo tháng, tách khớp lệnh và thỏa thuận, nghìn tỷ đồng',
+    marker:{i:8,f:.67,t:'21/9: FTSE hiệu lực'},
     label:i=>i===minI?fmt(K(MO[i].net),1):null,
     tip:i=>{const d=MO[i];return `${i===10?'Tháng 11 (đến 19/11)':'Tháng '+(i+1)}\nKhớp lệnh: ${fmt(K(d.nm),1)} nghìn tỷ\nThỏa thuận: ${fmt(K(d.nd),1)} nghìn tỷ\nTổng ròng: ${fmt(K(d.net),1)} nghìn tỷ\nMua ${fmt(K(d.buy),1)}, bán ${fmt(K(d.sell),1)}`;}});
 }
+
+/* ---------- panel 02 ---------- */
 function drawP2(){
   scatter($('#scat')); drawFtse();
   const s=byT['TCB']; if(!s||!s.flow) return; const f=s.flow;
-  stacked($('#tcbNet'),{labels:MON,A:f.map(x=>x?x[0]:null),B:f.map(x=>x?x[1]:null),div:1,h:230,mt:14,ml:46,maxw:26,aria:'Ròng khối ngoại của TCB theo tháng, tỷ đồng',
+  stacked($('#tcbNet'),{labels:MON,A:f.map(x=>x?x[0]:null),B:f.map(x=>x?x[1]:null),div:1,h:240,mt:14,ml:50,maxw:26,aria:'Ròng khối ngoại của TCB theo tháng, tỷ đồng',
     tip:i=>{const x=f[i]; if(!x)return MON[i]+': không có dữ liệu'; return `${MON[i]}\nKhớp lệnh: ${fmt(x[0],0)} tỷ\nThỏa thuận: ${fmt(x[1],0)} tỷ\nTổng: ${fmt(x[0]+x[1],0)} tỷ`;}});
-  lineMulti($('#tcbDeal'),{labels:MON,max:100,h:230,aria:'Tỷ trọng thỏa thuận và room còn lại của TCB theo tháng, phần trăm',
-    series:[{V:f.map(x=>x&&x[3]!=null?x[3]*100:null),color:'var(--deal)'},{V:f.map(x=>x&&x[2]!=null?x[2]*100:null),color:'var(--s2)'}],
+  lineMulti($('#tcbDeal'),{labels:MON,max:100,h:240,aria:'Tỷ trọng thỏa thuận và room còn lại của TCB theo tháng, phần trăm',
+    series:[{V:f.map(x=>x&&x[3]!=null?x[3]*100:null),color:'var(--deal)'},{V:f.map(x=>x&&x[2]!=null?x[2]*100:null),color:'var(--room)'}],
     tip:i=>{const x=f[i]; return x?`${MON[i]}\nThỏa thuận chiếm ${x[3]==null?'n/a':pct(x[3],0)} giao dịch ngoại\nRoom còn ${x[2]==null?'n/a':pct(x[2],1)} tổng room`:MON[i];}});
-  const d=f.map(x=>x&&x[3]!=null?x[3]:null);
-  $('#tcbRead1').innerHTML=`<b>Cách đọc</b>Từ tháng 1 đến tháng 3, khối ngoại gần như không giao dịch ròng ở TCB. Từ tháng 4 đến tháng 9, phần bán ròng nằm gần như hoàn toàn ở khớp lệnh (cột xám). Sang tháng 10 và 11, khối ngoại mua ròng trở lại.`;
-  $('#tcbRead2').innerHTML=`<b>Cách đọc</b>Room còn lại của TCB luôn dưới 10% tổng room. Tỷ trọng thỏa thuận giảm từ khoảng ${fmt(d[0]*100,0)}% ở các tháng đầu năm xuống ${fmt(d[7]*100,0)}% ở tháng 8 khi room nhích dần lên khỏi 0, rồi quay lại ${fmt(d[9]*100,0)}% và ${fmt(d[10]*100,0)}% ở tháng 10 và 11.`;
+  const d=f.map(x=>x&&x[3]!=null?x[3]:null), rm=f.map(x=>x&&x[2]!=null?x[2]:null);
+  const zero=rm.filter(v=>v===0).length;
+  $('#tcbRead1').innerHTML=`<b class="rl">Cách đọc</b>Đầu năm khối ngoại gần như không giao dịch ròng ở TCB. Từ tháng 4 đến tháng 9 phần bán ròng nằm gần như hoàn toàn ở khớp lệnh. Sang tháng 10 và 11 khối ngoại mua ròng trở lại.`;
+  $('#tcbRead2').innerHTML=`<b class="rl">Cách đọc</b>TCB hết hẳn room trong ${zero} tháng đầu năm, khi đó thỏa thuận chiếm ${fmt(d[0]*100,0)}% đến ${fmt(Math.max(d[0],d[1],d[2])*100,0)}% giao dịch ngoại. Khi room nhích khỏi 0, dù vẫn dưới 10%, tỷ trọng thỏa thuận rơi xuống ${fmt(d[7]*100,0)}% ở tháng 8.`;
 }
-
-
-/* ---------- panel 02: kiểm chứng FTSE ---------- */
 const FT=stocks.filter(s=>s.ftse), FOL=s=>s.room+s.fown, HR=s=>FOL(s)>0?s.room/FOL(s):0;
 const HR6=s=>s.flow&&s.flow[5]&&s.flow[5][2]!=null?s.flow[5][2]:null;
 const INV=s=>s.mc*Math.min(s.ff,FOL(s)), INV27=FT.reduce((a,s)=>a+INV(s),0), PASSIVE=1.5;
 const FT_OUT=stocks.slice().sort((a,b)=>b.mc-a.mc).slice(0,60).filter(s=>s.ex==='HOSE'&&!s.ftse&&HR6(s)!=null);
 const FT_LOST=FT_OUT.filter(s=>HR6(s)<.2&&FOL(s)>=.1);
 function ftseStrip(el){
-  const W=Math.max(300,el.clientWidth), Hh=150, m={l:96,r:12,t:14,b:30}, iw=W-m.l-m.r, x=v=>m.l+iw*Math.min(1,Math.max(0,v));
-  const rows=[['27 mã FTSE chọn',FT,'var(--deal)'],['Không được chọn',FT_OUT,null]], rh=(Hh-m.t-m.b)/2;
-  let g=''; [0,.2,.4,.6,.8,1].forEach(f=>{g+=`<line class="gl" x1="${x(f)}" x2="${x(f)}" y1="${m.t}" y2="${Hh-m.b}"/><text x="${x(f)}" y="${Hh-m.b+14}" text-anchor="middle">${fmt(f*100,0)}%</text>`;});
-  g+=`<line x1="${x(.2)}" x2="${x(.2)}" y1="${m.t-6}" y2="${Hh-m.b}" stroke="var(--ink)" stroke-width="1.5"/><text class="ink" x="${x(.2)+4}" y="${m.t-2}" style="font-size:10px">Ngưỡng 20%</text>`;
+  const W=W_(el), narrow=W<480, Hh=170, m={l:narrow?78:120,r:14,t:20,b:30}, iw=W-m.l-m.r, x=v=>m.l+iw*Math.min(1,Math.max(0,v));
+  const rows=[[narrow?'FTSE chọn':'27 mã FTSE chọn',FT,'var(--deal)'],[narrow?'Bị loại':'Không được chọn',FT_OUT,null]], rh=(Hh-m.t-m.b)/2;
+  let g=''; [0,.2,.4,.6,.8,1].forEach(f=>{g+=`<line class="gl" x1="${x(f)}" x2="${x(f)}" y1="${m.t}" y2="${Hh-m.b}"/><text x="${x(f)}" y="${Hh-m.b+16}" text-anchor="middle">${fmt(f*100,0)}%</text>`;});
+  g+=`<line x1="${x(.2)}" x2="${x(.2)}" y1="${m.t-8}" y2="${Hh-m.b}" stroke="var(--ink)" stroke-width="1.5"/><text class="ink" x="${x(.2)+5}" y="${m.t-6}" style="font-size:11.5px;font-weight:500">Ngưỡng 20%</text>`;
   let d='';
   rows.forEach(([lab,L,col],ri)=>{const cy=m.t+rh*ri+rh/2;
-    d+=`<text class="ink" x="${m.l-8}" y="${cy+4}" text-anchor="end" style="font-size:11px">${lab}</text>`;
-    L.forEach((s,i)=>{const h=HR6(s); const c=col||(h<.2&&FOL(s)>=.1?'var(--s2)':'#BFC8C2'); const jy=cy+((i%5)-2)*5;
-      d+=`<circle cx="${x(h)}" cy="${jy}" r="4.5" fill="${c}" stroke="var(--surface)" stroke-width="1.5" data-tip="${esc(`${s.t}, ${s.n}\nHeadroom 30/6: ${pct(h,1)}\nGiới hạn sở hữu ngoại: ${pct(FOL(s),1)}\nHeadroom 19/11: ${pct(HR(s),1)}`)}"/>`;});});
+    d+=`<text class="ink" x="${m.l-10}" y="${cy+4}" text-anchor="end">${lab}</text>`;
+    L.forEach((s,i)=>{const h=HR6(s); const c=col||(h<.2&&FOL(s)>=.1?'var(--room)':'#C4CCC7'); const jy=cy+((i%5)-2)*6;
+      d+=`<circle cx="${x(h)}" cy="${jy}" r="5" fill="${c}" stroke="var(--surface)" stroke-width="1.5" data-tip="${esc(`${s.t}, ${s.n}\nHeadroom 30/6: ${pct(h,1)}\nGiới hạn sở hữu ngoại: ${pct(FOL(s),1)}\nHeadroom 19/11: ${pct(HR(s),1)}`)}"/>`;});});
   el.innerHTML=`<svg viewBox="0 0 ${W} ${Hh}" width="${W}" height="${Hh}" role="img" aria-label="Headroom ngày 30/6/2026 của các mã FTSE chọn và không chọn, so với ngưỡng 20%">${g}${d}</svg>`;
 }
 function drawFtse(){
   ftseStrip($('#ftseStrip'));
   const minIn=Math.min(...FT.map(HR6)), minS=FT.find(s=>HR6(s)===minIn);
-  $('#ftseRead').innerHTML=`<b>Cách đọc</b>Cả ${FT.length} mã FTSE chọn đều có headroom từ ${pct(minIn,1)} (${esc(minS.t)}) trở lên vào ngày chốt dữ liệu. Các mã lớn bị loại có headroom dưới 20% đều nằm bên trái vạch đậm. Mã xám nhạt bị loại vì lý do khác như free float, thanh khoản hoặc giới hạn sở hữu quá thấp.`;
+  $('#ftseRead').innerHTML=`<b class="rl">Cách đọc</b>Cả ${FT.length} mã FTSE chọn đều có headroom từ ${pct(minIn,1)} (${esc(minS.t)}) trở lên vào ngày chốt dữ liệu. Các mã lớn bị loại vì headroom dưới 20% nằm bên trái vạch đậm. Chấm xám nhạt bị loại vì lý do khác như free float, thanh khoản hoặc giới hạn sở hữu quá thấp.`;
   const need=s=>Math.max(0,(.2*FOL(s)-s.room)/.8);
   const rows=FT_LOST.slice().sort((a,b)=>INV(b)-INV(a));
-  let h='<table><thead><tr><th class="l">Mã</th><th>Headroom 30/6</th><th>Headroom 19/11</th><th>Trần sở hữu</th><th>Cần nới (điểm)</th><th>Vốn, tr. US$</th></tr></thead><tbody>';
+  let h='<table><thead><tr><th class="l">Mã</th><th>Headroom 30/6</th><th>Headroom 19/11</th><th>Trần sở hữu</th><th>Cần nới, điểm</th><th>Vốn, triệu US$</th></tr></thead><tbody>';
   let tot=0;
   rows.forEach(s=>{const v=PASSIVE*1000*INV(s)/INV27; tot+=v; const nd=need(s);
     h+=`<tr><td class="l"><b>${esc(s.t)}</b></td><td>${pct(HR6(s),1)}</td><td>${pct(HR(s),1)}</td><td>${pct(FOL(s),1)}</td><td>${nd>0?'+'+fmt(nd*100,2):'đã đủ'}</td><td>${fmt(v,0)}</td></tr>`;});
-  h+=`<tr><td class="l"><b>Cộng</b></td><td></td><td></td><td></td><td></td><td><b>${fmt(tot,0)}</b></td></tr></tbody></table>`;
+  h+=`<tr class="tot"><td class="l">Cộng</td><td></td><td></td><td></td><td></td><td>${fmt(tot,0)}</td></tr></tbody></table>`;
   $('#ftseTbl').innerHTML=h;
   const ok=rows.filter(s=>need(s)===0).map(s=>s.t);
-  $('#ftseNote').innerHTML=`<b>Cách đọc</b>Nếu ${rows.length} mã này đạt ngưỡng, rổ FTSE có thể nhận thêm khoảng ${fmt(tot,0)} triệu US$ vốn thụ động, tức khoảng ${pct(tot/(PASSIVE*1000),0)} so với US$1,5 tỷ (khoảng ${fmt(tot*2.2/1.5,0)} triệu US$ nếu tổng là US$2,2 tỷ). Đây là ước lượng bậc một, tỷ lệ theo vốn hóa nhân min(free float, giới hạn sở hữu). ${ok.length?ok.join(' và ')+' đã trở lại trên 20% theo số liệu 19/11, nên có thể được xét ở kỳ sau. ':''}Ngân hàng tư nhân như TCB, MBB, OCB đang tự đặt giới hạn thấp hơn mức trần pháp lý, còn CTG đã ở trần 30% của ngân hàng. VIB không đưa vào bảng vì giới hạn 5% làm giá trị có thể đầu tư quá nhỏ.`;
+  $('#ftseNote').innerHTML=`<b class="rl">Cách đọc</b>Nếu ${rows.length} mã này đạt ngưỡng, rổ FTSE có thể nhận thêm khoảng <b>${fmt(tot,0)} triệu US$</b> vốn thụ động, bằng ${pct(tot/(PASSIVE*1000),0)} của US$1,5 tỷ. Đây là ước lượng bậc một theo vốn hóa nhân min(free float, giới hạn sở hữu). ${ok.length?ok.join(' và ')+' đã trở lại trên 20% theo số liệu 19/11 nên có thể được xét ở kỳ sau. ':''}TCB, MBB, OCB đang tự đặt giới hạn thấp hơn mức trần pháp lý, CTG đã ở trần 30% của ngân hàng.`;
 }
 
-/* ---------- panel 03: mô phỏng ---------- */
+/* ---------- panel 03: kiểm định ---------- */
+function forest(el){
+  const W=W_(el), narrow=W<560, lw=narrow?8:250, rh=narrow?40:26, rows=ECON.forest, gap=16;
+  const nA=rows.filter(r=>r[3]==='a').length, Hh=rows.length*rh+gap+46, m={l:lw,r:narrow?44:56,t:14,b:32};
+  const lo=-.1, hi=.7, iw=W-m.l-m.r, x=v=>m.l+iw*(v-lo)/(hi-lo);
+  let g=''; for(let v=-.1;v<=.701;v+=.1){const xx=x(v); g+=`<line class="${Math.abs(v)<1e-9?'ax':'gl'}" x1="${xx}" x2="${xx}" y1="${m.t-4}" y2="${Hh-m.b}"/><text x="${xx}" y="${Hh-m.b+16}" text-anchor="middle">${fmt(v*100,0)}</text>`;}
+  g+=`<text class="lab" x="${m.l+iw/2}" y="${Hh-2}" text-anchor="middle">Điểm phần trăm</text>`;
+  g+=`<line x1="${x(ECON.m2.b)}" x2="${x(ECON.m2.b)}" y1="${m.t-4}" y2="${Hh-m.b}" stroke="var(--room)" stroke-dasharray="3 3" stroke-width="1"/>`;
+  let d='';
+  rows.forEach((r,i)=>{const cy=m.t+rh*i+rh/2+(i>=nA?gap:0)+(narrow?7:0); const [lab,b,se,grp]=r, l=b-1.96*se, h=b+1.96*se;
+    if(i===nA) d+=`<line x1="0" x2="${W}" y1="${cy-rh/2-gap/2}" y2="${cy-rh/2-gap/2}" stroke="var(--rule)"/>`;
+    const base=i===0||i===nA;
+    d+=narrow?`<text class="${base?'ink':'lab'}" x="0" y="${cy-9}" style="paint-order:stroke;stroke:#fff;stroke-width:4px;${base?'font-weight:600':''}">${esc(lab)}</text>`:`<text class="${base?'ink':'lab'}" x="${m.l-12}" y="${cy+4}" text-anchor="end" style="${base?'font-weight:600':''}">${esc(lab)}</text>`;
+    d+=`<line x1="${x(l)}" x2="${x(h)}" y1="${cy}" y2="${cy}" stroke="${grp==='b'?'var(--deal)':'var(--room)'}" stroke-width="2" stroke-linecap="round"/>`;
+    d+=`<rect class="hit" x="0" y="${cy-rh/2}" width="${W}" height="${rh}" data-tip="${esc(`${lab}\nβ = ${fmt(b*100,1)} điểm %\nKhoảng tin cậy 95%: ${fmt(l*100,1)} đến ${fmt(h*100,1)}\nSai số chuẩn ${fmt(se*100,2)}`)}"/>`;
+    d+=`<circle cx="${x(b)}" cy="${cy}" r="${base?5.5:4.5}" fill="${grp==='b'?'var(--deal)':'var(--room)'}" stroke="#fff" stroke-width="2" pointer-events="none"/>`;
+    d+=`<text x="${W-4}" y="${cy+4}" text-anchor="end" style="fill:var(--ink)">${fmt(b*100,1)}</text>`;});
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${Hh}" width="${W}" height="${Hh}" role="img" aria-label="Hệ số room cạn và khoảng tin cậy 95% qua 14 đặc tả">${g}${d}</svg>`;
+}
+function cliff(el){
+  const W=W_(el), Hh=260, m={l:36,r:10,t:22,b:30}, rows=ECON.cliff, n=rows.length, iw=W-m.l-m.r, ih=Hh-m.t-m.b, band=iw/n, mx=.65;
+  const y=v=>m.t+ih*(1-v/mx);
+  let g=''; [0,.2,.4,.6].forEach(v=>{g+=`<line class="${v===0?'ax':'gl'}" x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}"/><text x="${m.l-6}" y="${y(v)+4}" text-anchor="end">${fmt(v*100,0)}</text>`;});
+  let d='';
+  rows.forEach(([lab,b,se],i)=>{const bw=Math.min(54,band*.5), x=m.l+band*i+(band-bw)/2, cx=x+bw/2, h=y(0)-y(b), l=b-1.96*se, u=b+1.96*se;
+    d+=`<path d="${rp(x,y(b),bw,h,3,0)}" fill="var(--room)" fill-opacity="${.45+.18*i}"/>`;
+    d+=`<line x1="${cx}" x2="${cx}" y1="${y(u)}" y2="${y(Math.max(0,l))}" stroke="var(--ink)" stroke-width="1.5"/><line x1="${cx-5}" x2="${cx+5}" y1="${y(u)}" y2="${y(u)}" stroke="var(--ink)" stroke-width="1.5"/>`;
+    d+=`<text class="ink" x="${cx+bw/2+4}" y="${y(b)+4}" style="font-family:var(--mono);font-weight:600">${fmt(b*100,1)}</text>`;
+    d+=`<text x="${m.l+band*i+band/2}" y="${Hh-8}" text-anchor="middle">${lab}</text>`;
+    d+=`<rect class="hit" x="${m.l+band*i}" y="${m.t}" width="${band}" height="${ih}" data-tip="${esc(`Room còn ${lab.toLowerCase()} tổng room\nβ = ${fmt(b*100,1)} điểm %, khoảng tin cậy 95% ${fmt(l*100,1)} đến ${fmt(u*100,1)}`)}"/>`;});
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${Hh}" width="${W}" height="${Hh}" role="img" aria-label="Hệ số room cạn theo bốn ngưỡng 15%, 10%, 5%, 1%">${g}${d}</svg>`;
+}
+function drawP3(){
+  const dm=model(noLev(DEF)), a=dm.agg, liqN=a.cnt.liq, roomN=a.cnt.room;
+  const h7ok=a.cov<1&&liqN>roomN;
+  const chip=(c,t)=>`<span class="chip ${c}">${t}</span>`;
+  const H=[
+    ['H1','Bán ròng của khối ngoại mang tính hệ thống, không phải dao động ngẫu nhiên quanh 0.','Động lượng dòng vốn quốc tế (Froot và cộng sự, 2001)','Kiểm định dấu, 11 tháng',`${negMonths}/${MO.length} tháng âm, p = ${fmt(signP,5)}`,signP<.05?chip('ok','Chấp nhận'):chip('no','Chưa đủ bằng chứng')],
+    ['H2','Khi room còn dưới 10%, tỷ trọng thỏa thuận cao hơn nhóm room rộng.','Thị trường song song (Bailey và Jagtiani, 1994)','Bảng dữ liệu M2, sai số chuẩn cụm',`β = ${fmt(ECON.m2.b*100,1)} điểm, p ${ECON.m2.p}`,chip('ok','Chấp nhận')],
+    ['H3','Quan hệ có dạng bậc thang: nhóm room 10% đến 30% cũng cao hơn.','Phần bù room tăng dần (Bailey và cộng sự, 1999)','Bảng dữ liệu M2',`β = ${fmt(ECON.m2n.b*100,1)} điểm, p = ${ECON.m2n.p}`,chip('no','Không ủng hộ: dạng ngưỡng')],
+    ['H4','Quan hệ ở H2 vẫn đúng khi khử đặc điểm riêng của từng mã.','Nhận dạng trong mã (Wooldridge, 2010)','Hiệu ứng cố định mã và tháng M4',`β = ${fmt(ECON.m4.b*100,1)} điểm, p = ${ECON.m4.p}`,chip('mid','Chấp nhận, nguồn hẹp')],
+    ['H5','Room cạn làm tăng xác suất một tháng do thỏa thuận chi phối.','Lựa chọn nhị phân (McFadden, 1974)','Logit, sai số chuẩn cụm',`Tỷ số chênh ${fmt(ECON.logit.or,2)}, tác động biên ${fmt(ECON.logit.ape*100,1)} điểm`,chip('ok','Chấp nhận')],
+    ['H6','Room không giải thích mức bán ròng xuyên mã, vì room chỉ chặn chiều mua.','Room là ràng buộc một chiều','OLS chéo, sai số chuẩn HC3','β room p = 0,549; 0,786; 0,349',chip('ok','Ủng hộ')],
+    ['H7','Ở thiết lập cơ sở, độ phủ dưới 100%; thanh khoản là nút thắt của đa số mã.','Đường cầu dốc xuống (Shleifer, 1986; Kyle, 1985)','Mô phỏng hấp thụ, tính trong trang',`Độ phủ ${pct(a.cov,1)}; nút thắt thanh khoản ${liqN} mã, room ${roomN} mã`,h7ok?chip('ok','Phù hợp'):chip('no','Không phù hợp')]];
+  $('#hypTbl').innerHTML=`<thead><tr><th class="l">Mã</th><th class="l">Giả thuyết</th><th class="l">Cơ sở lý thuyết</th><th class="l">Phép kiểm</th><th class="l">Kết quả</th><th class="l">Kết luận</th></tr></thead><tbody>`+
+    H.map(r=>`<tr><td class="l code">${r[0]}</td><td class="l w">${r[1]}</td><td class="l w" style="color:var(--ink-2)">${r[2]}</td><td class="l w">${r[3]}</td><td class="l" style="font-family:var(--mono);white-space:normal;min-width:150px">${r[4]}</td><td class="l">${r[5]}</td></tr>`).join('')+'</tbody>';
+  $('#lede3').innerHTML=`Trên ${fmt(SCAT.length,0)} quan sát mã theo tháng, khi room còn dưới 10% tỷ trọng thỏa thuận cao hơn <b>${fmt(ECON.m2.b*100,1)} điểm phần trăm</b> so với nhóm room rộng, sau khi kiểm soát quy mô giao dịch, vốn hóa và cú sốc chung của từng tháng. Nhóm room 10% đến 30% không khác biệt, nên room gây ra một vách đứng khi gần cạn chứ không cản dòng vốn từ từ.`;
+  forest($('#forest'));
+  const all=ECON.forest, mn=Math.min(...all.map(r=>r[1])), mxv=Math.max(...all.map(r=>r[1])), sig=all.filter(r=>r[1]-1.96*r[2]>0).length;
+  $('#forestRead').innerHTML=`<b class="rl">Cách đọc</b>Mỗi chấm là một ước lượng, thanh ngang là khoảng tin cậy 95%. Cả ${all.length} đặc tả cho hệ số dương, ${sig} trên ${all.length} có khoảng tin cậy nằm hẳn bên phải 0, độ lớn từ ${fmt(mn*100,1)} đến ${fmt(mxv*100,1)} điểm. Nhóm dưới, màu tối, chỉ dùng biến động trong cùng một mã và vẫn giữ dấu khi bỏ lần lượt từng ngân hàng nhận dạng.`;
+  cliff($('#cliff'));
+  const L=ECON.logit, lab=['Room còn dưới 10%','Room còn 10% đến 30%','Room còn từ 30% trở lên'], mxp=Math.max(...L.p);
+  $('#logitBars').innerHTML=L.p.map((p,i)=>`<div class="bar-row"><div><b style="font-weight:600">${lab[i]}</b></div><div class="trk"><i class="fill ${i===0?'c-room':'c-match'}" style="width:${Math.max(2,p/mxp*70)}%"></i><span class="v">${pct(p,1)}</span></div></div>`).join('');
+  $('#logitMini').innerHTML=`<div><span>Tỷ số chênh</span><b>${fmt(L.or,2)} lần</b><em>KTC 95%: ${fmt(L.lo,2)} đến ${fmt(L.hi,2)}</em></div><div><span>Tác động biên</span><b>+${fmt(L.ape*100,1)} điểm</b><em>xác suất, room cạn so với rộng</em></div><div><span>AUC</span><b>${fmt(L.auc,3)}</b><em>${L.ev} sự kiện trên ${fmt(L.n,0)} quan sát</em></div>`;
+  $('#csTbl').innerHTML=`<thead><tr><th class="l">Biến</th><th>C3: β</th><th>SE</th><th>p</th><th>C4: β</th><th>p</th><th>C5: p</th></tr></thead><tbody>`+ECON.cs.map(r=>`<tr><td class="l">${r[0]}</td>${r.slice(1).map((v,j)=>`<td${(j===2||j===4||j===5)&&parseFloat(v.replace(',','.'))<.05?' style="font-weight:600;color:var(--ink)"':''}>${v}</td>`).join('')}</tr>`).join('')+`</tbody>`;
+}
+
+/* ---------- panel 04: mô phỏng ---------- */
 let CUR=null;
 function segBar(el,rowsEl,vals,labelFn){
   const tot=vals.liq+vals.room+vals.float; const keys=['liq','room','float'];
@@ -676,61 +949,55 @@ function drawSim(){
   const b=base.agg, sa=scen.agg, nB=base.rows.length;
   $('#fxBasket').textContent=nB+' mã';
   const solo={room:model(Object.assign(noLev(o),{dr:o.dr})),float:model(Object.assign(noLev(o),{df:o.df})),liq:model(Object.assign(noLev(o),{g:o.g}))};
-  const gains=[['room',`Nới room thêm ${S.dr} điểm`,solo.room.agg.cov-b.cov],['float',`Tăng free float thêm ${S.df} điểm`,solo.float.agg.cov-b.cov],['liq',`Tăng thanh khoản ${S.g}%`,solo.liq.agg.cov-b.cov],['all','Cả ba đòn bẩy',sa.cov-b.cov]];
-  const best=gains.slice(0,3).slice().sort((a,c)=>c[2]-a[2])[0];
-  const anyLev=(S.dr>0||S.df>0||S.g>0);
-  // lede động
-  $('#lede3').innerHTML=`Với các giả định đang chọn, rổ <b>${nB} mã</b> hấp thụ được <b>${pct(b.cov,1)}</b> khoản ${S.tgtUsd<=3?'vốn thụ động':'vốn ngoại (gồm cả quỹ chủ động)'} <b>${fmt(K(b.tgt),1)} nghìn tỷ đồng</b> trong ${S.H} phiên. `+(anyLev?`Dùng cả ba đòn bẩy đã chọn thì độ phủ lên <b>${pct(sa.cov,1)}</b>, và đòn bẩy nâng nhiều nhất là <b>${best[1].toLowerCase()}</b>.`:`Chưa bật đòn bẩy nào, hãy kéo các thanh trượt ở nhóm Đòn bẩy chính sách để xem độ phủ đổi ra sao.`);
-  // số chính
-  const gainAll=sa.cov-b.cov;
+  const gains=[['room',`Nới room thêm ${S.dr} điểm`,solo.room.agg.cov-b.cov],['float',`Tăng free float thêm ${S.df} điểm`,solo.float.agg.cov-b.cov],['liq',`Tăng thanh khoản ${S.g}%`,solo.liq.agg.cov-b.cov]];
+  const best=gains.slice().sort((a,c)=>c[2]-a[2])[0];
+  const anyLev=(S.dr>0||S.df>0||S.g>0), gainAll=sa.cov-b.cov;
+  $('#lede4').innerHTML=`Với giả định đang chọn, rổ <b>${nB} mã</b> hấp thụ được <b>${pct(b.cov,1)}</b> khoản ${S.tgtUsd<=3?'vốn thụ động':'vốn ngoại gồm cả quỹ chủ động'} ${fmt(K(b.tgt),1)} nghìn tỷ đồng trong ${S.H} phiên. `+(anyLev?`Dùng cả ba đòn bẩy đang chọn thì độ phủ lên <b>${pct(sa.cov,1)}</b>${best[2]>1e-4?`, đòn bẩy nâng nhiều nhất là ${best[1].toLowerCase()}`:''}.`:`Kéo các thanh trượt Đòn bẩy chính sách để xem độ phủ đổi ra sao.`);
   $('#sumDem').textContent=`${S.N==='ftse'?'rổ FTSE':S.N+' mã'}, US$${fmt(S.tgtUsd,1)} tỷ, ${Math.round(STAGES[S.stage].c*100)}%`; $('#sumAbs').textContent=`H ${S.H}, p ${S.p}%`;
   $('#chain').innerHTML=`<div class="hero-n"><div class="hn"><span>Độ phủ cơ sở</span><b>${pct(b.cov,1)}</b></div>${anyLev?`<span class="ar" aria-hidden="true">→</span><div class="hn hi"><span>Sau đòn bẩy</span><b>${pct(sa.cov,1)}</b><em>+${fmt(gainAll*100,1)} điểm</em></div>`:''}<div class="hm">Mục tiêu <b>${fmt(K(b.tgt),1)}</b> nghìn tỷ đồng<br>Hấp thụ <b>${fmt(K(b.ab),1)}</b>${anyLev?` → <b>${fmt(K(sa.ab),1)}</b>`:''} nghìn tỷ</div></div><div class="hbar" role="img" aria-label="Độ phủ cơ sở ${pct(b.cov,1)}${anyLev?', sau đòn bẩy '+pct(sa.cov,1):''}"><i class="b" style="width:${Math.min(100,b.cov*100)}%"></i><i class="a" style="width:${Math.max(0,Math.min(100-b.cov*100,gainAll*100))}%"></i></div><div class="hscale"><span>0%</span><span>100% mục tiêu</span></div>`;
-  // kết luận: xếp hạng đòn bẩy
   let txt;
-  if(b.gap<=0.5){txt=`<p><b>Kết luận:</b> với thiết lập này, rổ ${nB} mã hấp thụ đủ mục tiêu ${fmt(K(b.tgt),1)} nghìn tỷ đồng. Hãy tăng mục tiêu hoặc rút ngắn số phiên để thấy nút thắt xuất hiện.</p>`;}
+  if(b.gap<=0.5){txt=`<p><b>Rổ ${nB} mã hấp thụ đủ mục tiêu ${fmt(K(b.tgt),1)} nghìn tỷ đồng.</b> Tăng tổng vốn hoặc rút ngắn số phiên để thấy nút thắt xuất hiện.</p>`;}
   else{
     const shr=k=>b.byGap[k]/b.gap; const tg=base.rows.slice().sort((x,y)=>y.gap-x.gap)[0];
-    const rank=gains.slice(0,3).slice().sort((x,y)=>y[2]-x[2]), mgn=Math.max(rank[0][2],.001);
+    const rank=gains.slice().sort((x,y)=>y[2]-x[2]), mgn=Math.max(rank[0][2],.001);
     const rowsH=rank.map((g,i)=>`<div class="rk"><span class="n">${i+1}</span><div class="rt"><b>${g[1]}</b><span>${BIND[g[0]].lever}</span></div><div class="rv"><div class="bar"><i class="${BIND[g[0]].cls}" style="width:${Math.max(2,g[2]/mgn*100)}%"></i></div><span class="v">+${fmt(g[2]*100,1)} điểm</span></div></div>`).join('');
-    txt=`<div class="vh">Nên nới đòn bẩy nào trước</div>`
-      +(anyLev?rowsH+`<p class="vall">Cả ba cùng lúc nâng độ phủ <b>+${fmt(gainAll*100,1)} điểm</b>, lên <b>${pct(sa.cov,1)}</b>.</p>`:`<p>Chưa bật đòn bẩy nào. Hãy kéo các thanh trượt ở nhóm Đòn bẩy chính sách để xếp hạng.</p>`)
-      +`<p class="vn">Phần bỏ lỡ ở thiết lập cơ sở là <b>${fmt(K(b.gap),1)} nghìn tỷ đồng</b>: ${pct(shr('liq'),0)} do thanh khoản, ${pct(shr('room'),0)} do room, ${pct(shr('float'),0)} do free float. Có ${b.blk.room+b.blk.liq+b.blk.float} trên ${nB} mã thực sự thiếu dư địa: ${b.blk.room} do room, ${b.blk.liq} do thanh khoản, ${b.blk.float} do free float. Các mã còn lại hấp thụ đủ phần của mình.</p>`+(S.N==='ftse'?`<p class="vn">Rổ FTSE đã loại sẵn các mã còn dưới 20% headroom (xem panel 02), nên trong rổ này room gần như không chặn. Tác động của room nằm ở việc mã có được vào rổ hay không.</p>`:'')
-      +(tg.gap/b.gap>=.4?`<p class="vn"><b>Lưu ý:</b> ${esc(tg.s.t)} một mình chiếm ${pct(tg.gap/b.gap,0)} phần bỏ lỡ của cả rổ do ${BIND[tg.bind].n.toLowerCase()}, nên cần xem xét riêng.</p>`:'');}
-  const vd=$('#verdict'); vd.innerHTML=txt; vd.classList.toggle('hot',b.cov<.8);
-  // thanh phân bổ
+    txt=`<p class="vh">Nên nới đòn bẩy nào trước</p>`
+      +(anyLev?rowsH+`<p class="vall">Cả ba cùng lúc nâng độ phủ <b>+${fmt(gainAll*100,1)} điểm</b>, lên <b>${pct(sa.cov,1)}</b>.</p>`:`<p>Chưa bật đòn bẩy nào. Kéo các thanh trượt để xếp hạng.</p>`)
+      +`<p>Phần bỏ lỡ ở thiết lập cơ sở là <b>${fmt(K(b.gap),1)} nghìn tỷ đồng</b>: ${pct(shr('liq'),0)} do thanh khoản, ${pct(shr('room'),0)} do room, ${pct(shr('float'),0)} do free float. ${b.blk.room+b.blk.liq+b.blk.float} trên ${nB} mã thực sự thiếu dư địa (${b.blk.room} do room, ${b.blk.liq} do thanh khoản, ${b.blk.float} do free float), các mã còn lại hấp thụ đủ phần của mình.</p>`
+      +(S.N==='ftse'?`<p>Rổ FTSE đã loại sẵn các mã dưới 20% headroom, nên trong rổ này room gần như không chặn. Tác động của room nằm ở việc mã có được vào rổ hay không.</p>`:'')
+      +(tg.gap/b.gap>=.4?`<p><b>Lưu ý:</b> ${esc(tg.s.t)} một mình chiếm ${pct(tg.gap/b.gap,0)} phần bỏ lỡ của cả rổ do ${BIND[tg.bind].n.toLowerCase()}, nên cần xem xét riêng.</p>`:'');}
+  $('#verdict').innerHTML=txt;
   segBar($('#capBar'),$('#capRows'),b.byCap,k=>`${b.cnt[k]} mã`);
   segBar($('#gapBar'),$('#gapRows'),b.byGap,k=>(b.gap>0?pct(b.byGap[k]/b.gap,0):'0%')+`, ${b.blk[k]} mã`);
-  // top 12
   const top=base.rows.filter(r=>r.gap>5).sort((a,c)=>c.gap-a.gap).slice(0,12), mg=Math.max(...top.map(r=>r.gap),1);
   const scenBy={}; scen.rows.forEach(r=>scenBy[r.s.t]=r);
   $('#topGap').innerHTML=top.map(r=>{const k=r.bind; const sg=scenBy[r.s.t].gap;
     const tt=`${r.s.t}, ${r.s.n}\nNhu cầu mô phỏng: ${fmt(K(r.dem),2)} nghìn tỷ\nHấp thụ được: ${fmt(K(r.ab),2)} nghìn tỷ\nBị bỏ lỡ: ${fmt(K(r.gap),2)} nghìn tỷ\nNút thắt: ${BIND[k].n}\nSau đòn bẩy bị bỏ lỡ: ${fmt(K(sg),2)} nghìn tỷ`;
-    return `<div class="gaprow" data-t="${esc(r.s.t)}" data-tip="${esc(tt)}"><span class="t">${esc(r.s.t)}</span><span class="trk"><i class="fill ${BIND[k].cls}" style="width:${Math.max(2,r.gap/mg*62)}%"></i><span class="v">${fmt(K(r.gap),1)} → ${fmt(K(sg),1)}</span></span></div>`;}).join('');
+    return `<div class="gaprow" role="button" tabindex="0" data-t="${esc(r.s.t)}" data-tip="${esc(tt)}"><span class="t">${esc(r.s.t)}</span><span class="trk"><i class="fill ${BIND[k].cls}" style="width:${Math.max(2,r.gap/mg*60)}%"></i><span class="v">${fmt(K(r.gap),1)} → ${fmt(K(sg),1)}</span></span></div>`;}).join('');
   if(!top.length)$('#topGap').innerHTML='<p class="small">Không mã nào bị bỏ lỡ ở thiết lập này.</p>';
-  $$('#topGap .gaprow').forEach(e=>e.addEventListener('click',()=>pickStock(e.dataset.t,true)));
-  // bản đồ nhiệt
+  $$('#topGap .gaprow').forEach(e=>{e.addEventListener('click',()=>pickStock(e.dataset.t,true)); e.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault(); pickStock(e.dataset.t,true);}});});
   const Hs=[20,60,120,250,500], Ps=[5,10,15,20,25];
-  let hh=`<div class="heat" style="grid-template-columns:54px repeat(${Ps.length},1fr)"><div class="h"></div>`+Ps.map(p=>`<div class="h">p ${p}%</div>`).join('');
-  Hs.forEach(H=>{hh+=`<div class="h" style="text-align:right">H ${H}</div>`; Ps.forEach(p=>{const c=model(noLev(Object.assign({},o,{H,p}))).agg.cov; const t=Math.min(1,c); const col=mix([205,226,251],[16,66,129],t); const dark=t>.62; const cur=(H===S.H&&p===S.p);
-    hh+=`<div style="background:rgb(${col});color:${dark?'#fff':'#0b0b0b'};${cur?'outline:2px solid var(--ink);outline-offset:-2px;font-weight:600':''}" data-tip="${esc('H '+H+' phiên, p '+p+'%\nĐộ phủ cơ sở '+pct(c,1))}">${fmt(c*100,0)}%</div>`;});});
+  let hh=`<div class="heat" style="grid-template-columns:58px repeat(${Ps.length},1fr)"><div class="h"></div>`+Ps.map(p=>`<div class="h">p ${p}%</div>`).join('');
+  Hs.forEach(H=>{hh+=`<div class="h" style="text-align:right">H ${H}</div>`; Ps.forEach(p=>{const c=model(noLev(Object.assign({},o,{H,p}))).agg.cov; const t=Math.min(1,c); const col=mix([222,235,250],[13,54,107],t); const dark=t>.55; const cur=(H===S.H&&p===S.p);
+    hh+=`<div style="background:rgb(${col});color:${dark?'#fff':'#0b0b0b'};${cur?'outline:2px solid var(--room);outline-offset:-2px;font-weight:600':''}" data-tip="${esc('H '+H+' phiên, p '+p+'%\nĐộ phủ cơ sở '+pct(c,1))}">${fmt(c*100,0)}%</div>`;});});
   $('#heat').innerHTML=hh+'</div>';
-  // bảng so sánh đòn bẩy
-  const cr=(lab,m)=>`<tr><td class="l">${lab}</td><td>${pct(m.agg.cov,1)}</td><td>${fmt(K(m.agg.ab),1)}</td><td>${fmt(K(m.agg.gap),1)}</td><td>${m.agg.blk.room} / ${m.agg.blk.liq}</td></tr>`;
-  $('#cmpTbl').innerHTML=`<table><thead><tr><th class="l">Kịch bản</th><th>Độ phủ</th><th>Hấp thụ</th><th>Bỏ lỡ</th><th>Thiếu dư địa (room/TK)</th></tr></thead><tbody>${cr('Cơ sở',base)}${cr('Nới room thêm '+S.dr+' điểm',solo.room)}${cr('Tăng free float thêm '+S.df+' điểm',solo.float)}${cr('Tăng thanh khoản '+S.g+'%',solo.liq)}${cr('<b>Cả ba đòn bẩy</b>',scen)}</tbody></table>`;
-  drawList(); drawTable(); drawDetailHead(); drawLede4();
+  const cr=(lab,m,bold)=>`<tr${bold?' class="tot"':''}><td class="l">${lab}</td><td>${pct(m.agg.cov,1)}</td><td>${fmt(K(m.agg.ab),1)}</td><td>${fmt(K(m.agg.gap),1)}</td><td>${m.agg.blk.room} / ${m.agg.blk.liq}</td></tr>`;
+  $('#cmpTbl').innerHTML=`<table><thead><tr><th class="l">Kịch bản</th><th>Độ phủ</th><th>Hấp thụ</th><th>Bỏ lỡ</th><th title="Số mã thiếu dư địa do room và do thanh khoản">Thiếu R/TK</th></tr></thead><tbody>${cr('Cơ sở',base)}${cr('Nới room thêm '+S.dr+' điểm',solo.room)}${cr('Tăng free float thêm '+S.df+' điểm',solo.float)}${cr('Tăng thanh khoản '+S.g+'%',solo.liq)}${cr('Cả ba đòn bẩy',scen,true)}</tbody></table>`;
+  drawList(); drawTable(); drawDetailHead(); drawLede5();
+  if(CUR_TAB==='p3') drawP3();
 }
 
-/* ---------- panel 04 ---------- */
-function drawLede4(){
+/* ---------- panel 05 ---------- */
+function drawLede5(){
   const rows=CUR.base.rows, nF=rows.filter(r=>r.s.flow).length;
-  $('#lede4').innerHTML=`Chọn một mã để xem ba giới hạn R, F, L và nút thắt của nó, cùng dòng vốn ngoại theo tháng. Danh sách xếp <b>${rows.length} mã trong rổ</b> theo phần nhu cầu bị bỏ lỡ. ${nF===rows.length?'Cả '+nF+' mã đều có dữ liệu dòng vốn theo tháng.':'<b>'+nF+' mã</b> trong số đó có dữ liệu dòng vốn theo tháng.'}`;
+  $('#lede5').innerHTML=`Chọn một mã để xem ba giới hạn R, F, L, nút thắt của nó và dòng vốn ngoại theo tháng. Danh sách xếp <b>${rows.length} mã trong rổ</b> đang chọn ở panel 04 theo phần nhu cầu bị bỏ lỡ. ${nF===rows.length?'Cả '+nF+' mã đều có dữ liệu dòng vốn theo tháng.':'<b>'+nF+' mã</b> trong số đó có dữ liệu dòng vốn theo tháng.'}`;
 }
 function drawList(){
   const q=S.lq.trim().toLowerCase();
   const rows=CUR.base.rows.slice().sort((a,c)=>c.gap-a.gap), mg=Math.max(...rows.map(r=>r.gap),1);
   const f=q?rows.filter(r=>r.s.t.toLowerCase().includes(q)||r.s.n.toLowerCase().includes(q)):rows;
   $('#list').innerHTML=f.map((r,i)=>{const tt=`${r.s.t}, ${r.s.n}\nBị bỏ lỡ: ${fmt(K(r.gap),2)} nghìn tỷ\nNút thắt: ${BIND[r.bind].n}`;
-    return `<div class="lrow${r.s.t===S.sel?' sel':''}" data-t="${esc(r.s.t)}" data-tip="${esc(tt)}"><span class="i">${i+1}</span><span class="nm"><b>${esc(r.s.t)}</b> <small>${esc(r.s.n)}</small><span class="barbg"><span class="${BIND[r.bind].cls}" style="width:${Math.max(1.5,r.gap/mg*100)}%"></span></span></span><span class="v">${fmt(K(r.gap),2)}</span></div>`;}).join('')||'<p class="small">Không có mã nào khớp.</p>';
+    return `<button type="button" class="lrow${r.s.t===S.sel?' sel':''}" data-t="${esc(r.s.t)}" data-tip="${esc(tt)}" aria-pressed="${r.s.t===S.sel}"><span class="i">${i+1}</span><span class="nm"><b>${esc(r.s.t)}</b> <small>${esc(r.s.n)}</small><span class="barbg"><span class="${BIND[r.bind].cls}" style="width:${Math.max(1.5,r.gap/mg*100)}%"></span></span></span><span class="v">${fmt(K(r.gap),2)}</span></button>`;}).join('')||'<p class="small">Không có mã nào khớp.</p>';
   $$('#list .lrow').forEach(e=>e.addEventListener('click',()=>pickStock(e.dataset.t,false)));
 }
 function centerSel(){const c=$('#list'), s=$('#list .lrow.sel'); if(c&&s) c.scrollTop=Math.max(0,s.offsetTop-c.clientHeight/2+s.clientHeight/2);}
@@ -738,28 +1005,28 @@ function drawDetailHead(){
   const s=byT[S.sel]; if(!s)return; const o=opts(); const b=calc(s,noLev(o)), c=calc(s,o);
   const r=CUR.base.rows.find(x=>x.s.t===s.t);
   const vals=[['room','Room (R)',b.R],['float','Free float (F)',b.F],['liq','Thanh khoản (L)',b.L]], mx=Math.max(b.R,b.F,b.L,1);
-  const caps=vals.map(([k,l,v])=>`<div class="bar-row"><div>${sw(k)}${l}${k===b.bind?' <b>nút thắt</b>':''}</div><div class="trk"><i class="fill ${BIND[k].cls}" style="width:${Math.max(1.5,v/mx*52)}%"></i><span class="v">${fmt(K(v),2)} nghìn tỷ</span></div></div>`).join('');
-  $('#detailHead').innerHTML=`<h3>${esc(s.t)} · ${esc(s.n)}</h3>
-  <p class="sub">${esc(s.ex)}, ${esc(s.ind)}. Vốn hóa ${fmt(K(s.mc),1)} nghìn tỷ, room còn ${pct(s.room)} cổ phần, tức ${pct(HR(s),1)} giới hạn sở hữu (headroom), sở hữu ngoại ${pct(s.fown)}, free float ${pct(s.ff,0)}, GTGD khớp lệnh bình quân ${fmt(s.adtv,0)} tỷ mỗi phiên. ${s.ftse?'Có trong rổ FTSE từ 21/9/2026.':'Không có trong rổ FTSE.'}${s.net==null?'':' Ròng khối ngoại 2026: '+fmt(K(s.net),2)+' nghìn tỷ.'}</p>
+  const caps=vals.map(([k,l,v])=>`<div class="bar-row"><div>${sw(k)}${l}${k===b.bind?'<span class="bt">nút thắt</span>':''}</div><div class="trk"><i class="fill ${BIND[k].cls}" style="width:${Math.max(1.5,v/mx*55)}%"></i><span class="v">${fmt(K(v),2)} nghìn tỷ</span></div></div>`).join('');
+  $('#detailHead').innerHTML=`<h3>${esc(s.t)} <span style="font-weight:500;color:var(--ink-2)">${esc(s.n)}</span></h3>
+  <p class="sub">${esc(s.ex)}, ${esc(s.ind)}. Vốn hóa ${fmt(K(s.mc),1)} nghìn tỷ, room còn ${pct(s.room)} cổ phần, tức ${pct(HR(s),1)} giới hạn sở hữu, sở hữu ngoại ${pct(s.fown)}, free float ${pct(s.ff,0)}, GTGD khớp lệnh bình quân ${fmt(s.adtv,0)} tỷ mỗi phiên. ${s.ftse?'Có trong rổ FTSE từ 21/9/2026.':'Không có trong rổ FTSE.'}${s.net==null?'':' Ròng khối ngoại 2026: '+fmt(K(s.net),2)+' nghìn tỷ.'}</p>
   ${caps}
-  <p class="sub" style="margin-top:8px">Dư địa cơ sở ${fmt(K(b.cap),2)} nghìn tỷ, sau đòn bẩy ${fmt(K(c.cap),2)} nghìn tỷ. ${r?`Nhu cầu mô phỏng ${fmt(K(r.dem),2)} nghìn tỷ, hấp thụ ${fmt(K(r.ab),2)}, bỏ lỡ ${fmt(K(r.gap),2)}.`:'Mã này nằm ngoài rổ ở thiết lập hiện tại nên không có nhu cầu mô phỏng.'}</p>`;
+  <p class="sub" style="margin:10px 0 0">Dư địa cơ sở ${fmt(K(b.cap),2)} nghìn tỷ, sau đòn bẩy ${fmt(K(c.cap),2)} nghìn tỷ. ${r?`Nhu cầu mô phỏng ${fmt(K(r.dem),2)} nghìn tỷ, hấp thụ ${fmt(K(r.ab),2)}, bỏ lỡ ${fmt(K(r.gap),2)}.`:'Mã này nằm ngoài rổ ở thiết lập hiện tại nên không có nhu cầu mô phỏng.'}</p>`;
 }
-function drawP4(){
+function drawP5(){
   drawDetailHead();
   const s=byT[S.sel]; if(!s)return;
-  if(!s.flow){['#dNet','#dRoom','#dDeal'].forEach(id=>$(id).innerHTML='<p class="small">Mã này chưa có dữ liệu dòng vốn theo tháng trong bộ dữ liệu (chỉ 124 mã vốn hóa lớn nhất).</p>');return;}
+  if(!s.flow){['#dNet','#dRoom','#dDeal'].forEach(id=>$(id).innerHTML='<p class="small">Mã này chưa có dữ liệu dòng vốn theo tháng, chỉ 124 mã vốn hóa lớn nhất có.</p>');return;}
   const f=s.flow;
-  stacked($('#dNet'),{labels:MON,A:f.map(x=>x?x[0]:null),B:f.map(x=>x?x[1]:null),div:1,h:210,mt:14,ml:46,maxw:26,aria:'Ròng khối ngoại của '+s.t+' theo tháng, tỷ đồng',
+  stacked($('#dNet'),{labels:MON,A:f.map(x=>x?x[0]:null),B:f.map(x=>x?x[1]:null),div:1,h:220,mt:14,ml:50,maxw:28,aria:'Ròng khối ngoại của '+s.t+' theo tháng, tỷ đồng',
     tip:i=>{const x=f[i];return x?`${MON[i]}\nKhớp lệnh: ${fmt(x[0],0)} tỷ\nThỏa thuận: ${fmt(x[1],0)} tỷ\nTổng: ${fmt(x[0]+x[1],0)} tỷ`:MON[i]+': không có dữ liệu';}});
-  lineMulti($('#dRoom'),{labels:MON,max:100,h:180,aria:'Room còn lại của '+s.t+' theo tháng, phần trăm tổng room',series:[{V:f.map(x=>x&&x[2]!=null?x[2]*100:null),color:'var(--s2)'}],tip:i=>{const x=f[i];return x&&x[2]!=null?`${MON[i]}: room còn ${pct(x[2],1)} tổng room`:MON[i]+': không có dữ liệu';}});
+  lineMulti($('#dRoom'),{labels:MON,max:100,h:180,aria:'Room còn lại của '+s.t+' theo tháng, phần trăm tổng room',series:[{V:f.map(x=>x&&x[2]!=null?x[2]*100:null),color:'var(--room)'}],tip:i=>{const x=f[i];return x&&x[2]!=null?`${MON[i]}: room còn ${pct(x[2],1)} tổng room`:MON[i]+': không có dữ liệu';}});
   lineMulti($('#dDeal'),{labels:MON,max:100,h:180,aria:'Tỷ trọng thỏa thuận của '+s.t+' theo tháng, phần trăm',series:[{V:f.map(x=>x&&x[3]!=null?x[3]*100:null),color:'var(--deal)'}],tip:i=>{const x=f[i];return x&&x[3]!=null?`${MON[i]}: thỏa thuận chiếm ${pct(x[3],0)} giao dịch ngoại`:MON[i]+': không có giao dịch ngoại';}});
 }
-function pickStock(t,jump){S.sel=t; if(jump)show('p4'); drawList(); drawP4(); centerSel();}
+function pickStock(t,jump){S.sel=t; if(jump)show('p5'); drawList(); drawP5(); centerSel();}
 
 /* ---------- bảng ---------- */
-const COLS=[['t','Mã',null,'l'],['ind','Ngành',null,'l'],['mc','Vốn hóa (nghìn tỷ)',r=>K(r.s.mc),0],['room','Room còn (%)',r=>r.s.room*100,1],['ff','Free float (%)',r=>r.s.ff*100,0],['adtv','GTGD khớp lệnh bq (tỷ/phiên)',r=>r.s.adtv,0],
- ['R','R (nghìn tỷ)',r=>K(r.b.R),1],['F','F (nghìn tỷ)',r=>K(r.b.F),1],['L','L (nghìn tỷ)',r=>K(r.b.L),1],['cap','Dư địa (nghìn tỷ)',r=>K(r.b.cap),1],['bind','Nút thắt',null,'l'],
- ['dem','Nhu cầu (nghìn tỷ)',r=>K(r.b.dem),2],['gap','Bị bỏ lỡ (nghìn tỷ)',r=>K(r.b.gap),2],['scap','Dư địa sau đòn bẩy (nghìn tỷ)',r=>K(r.sc.cap),1],['net','Ròng ngoại 2026 (nghìn tỷ)',r=>r.s.net==null?null:K(r.s.net),1]];
+const COLS=[['t','Mã',null,'l'],['ind','Ngành',null,'l'],['mc','Vốn hóa, nghìn tỷ',r=>K(r.s.mc),0],['room','Room còn, %',r=>r.s.room*100,1],['ff','Free float, %',r=>r.s.ff*100,0],['adtv','GTGD khớp lệnh, tỷ/phiên',r=>r.s.adtv,0],
+ ['R','R',r=>K(r.b.R),1],['F','F',r=>K(r.b.F),1],['L','L',r=>K(r.b.L),1],['cap','Dư địa',r=>K(r.b.cap),1],['bind','Nút thắt',null,'l'],
+ ['dem','Nhu cầu',r=>K(r.b.dem),2],['gap','Bị bỏ lỡ',r=>K(r.b.gap),2],['scap','Dư địa sau đòn bẩy',r=>K(r.sc.cap),1],['net','Ròng ngoại 2026',r=>r.s.net==null?null:K(r.s.net),1]];
 function tableRows(){
   const bm={},sm={}; CUR.base.rows.forEach(r=>bm[r.s.t]=r); CUR.scen.rows.forEach(r=>sm[r.s.t]=r);
   let rows=CUR.base.rows.map(r=>({s:r.s,b:bm[r.s.t],sc:sm[r.s.t]}));
@@ -771,9 +1038,10 @@ function tableRows(){
   return rows;
 }
 function drawTable(){
-  const th=$('#tbl thead'); th.innerHTML='<tr>'+COLS.map(c=>`<th class="${c[3]==='l'?'l':''}" data-k="${c[0]}">${c[1]}${S.sortK===c[0]?(S.sortDir>0?' ▲':' ▼'):''}</th>`).join('')+'</tr>';
-  $$('#tbl th').forEach(h=>h.addEventListener('click',()=>{const k=h.dataset.k; if(S.sortK===k)S.sortDir*=-1; else{S.sortK=k;S.sortDir=(k==='t'||k==='ind'||k==='bind')?1:-1;} drawTable();}));
-  const rows=tableRows(); $('#tblCount').textContent=`${rows.length} mã`;
+  const th=$('#tbl thead'); th.innerHTML='<tr>'+COLS.map(c=>`<th class="${c[3]==='l'?'l':''}" data-k="${c[0]}" tabindex="0" aria-sort="${S.sortK===c[0]?(S.sortDir>0?'ascending':'descending'):'none'}">${c[1]}${S.sortK===c[0]?(S.sortDir>0?' ▲':' ▼'):''}</th>`).join('')+'</tr>';
+  const sortBy=k=>{if(S.sortK===k)S.sortDir*=-1; else{S.sortK=k;S.sortDir=(k==='t'||k==='ind'||k==='bind')?1:-1;} drawTable();};
+  $$('#tbl th').forEach(h=>{h.addEventListener('click',()=>sortBy(h.dataset.k)); h.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); sortBy(h.dataset.k);}});});
+  const rows=tableRows(); $('#tblCount').textContent=`${rows.length} mã, đơn vị nghìn tỷ đồng trừ khi ghi khác`;
   const tb=$('#tbl tbody'); tb.innerHTML='';
   const frag=document.createDocumentFragment();
   rows.forEach(r=>{const tr=document.createElement('tr');
@@ -783,11 +1051,11 @@ function drawTable(){
       else if(c[0]==='bind'){td.innerHTML=`<span class="tag">${sw(r.b.bind)}${BIND[r.b.bind].n}</span>`;}
       else{const v=c[2](r); td.textContent=v==null?'n/a':fmt(v,c[3]);}
       tr.appendChild(td);});
-    tr.addEventListener('click',()=>{S.sel=r.s.t; drawList(); drawP4(); centerSel(); const e=$('.detail'); if(e&&e.scrollIntoView) e.scrollIntoView({behavior:'smooth',block:'nearest'});}); frag.appendChild(tr);});
+    tr.addEventListener('click',()=>{S.sel=r.s.t; drawList(); drawP5(); centerSel(); const e=$('.maprow'); if(e&&e.scrollIntoView) e.scrollIntoView({behavior:'smooth',block:'start'});}); frag.appendChild(tr);});
   tb.appendChild(frag);
 }
 function csv(){
-  const rows=tableRows(); const H=['Mã','Tên','Sàn','Ngành','Vốn hóa (tỷ)','Room còn (tỷ lệ)','Free float (tỷ lệ)','Sở hữu ngoại (tỷ lệ)','GTGD bq (tỷ/phiên)','R (tỷ)','F (tỷ)','L (tỷ)','Dư địa (tỷ)','Nút thắt','Nhu cầu mô phỏng (tỷ)','Bị bỏ lỡ (tỷ)','Dư địa sau đòn bẩy (tỷ)','Ròng ngoại 2026 (tỷ)'];
+  const rows=tableRows(); const H=['Mã','Tên','Sàn','Ngành','Vốn hóa (tỷ)','Room còn (tỷ lệ)','Free float (tỷ lệ)','Sở hữu ngoại (tỷ lệ)','GTGD khớp lệnh bq (tỷ/phiên)','R (tỷ)','F (tỷ)','L (tỷ)','Dư địa (tỷ)','Nút thắt','Nhu cầu mô phỏng (tỷ)','Bị bỏ lỡ (tỷ)','Dư địa sau đòn bẩy (tỷ)','Ròng ngoại 2026 (tỷ)'];
   const q=v=>{v=v==null?'':String(v); return /[",\n;]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
   const out=[H.join(',')].concat(rows.map(r=>[r.s.t,r.s.n,r.s.ex,r.s.ind,r.s.mc,r.s.room,r.s.ff,r.s.fown,r.s.adtv,r.b.R.toFixed(1),r.b.F.toFixed(1),r.b.L.toFixed(1),r.b.cap.toFixed(1),BIND[r.b.bind].n,r.b.dem.toFixed(1),r.b.gap.toFixed(1),r.sc.cap.toFixed(1),r.s.net==null?'':r.s.net].map(q).join(',')));
   const blob=new Blob(['﻿'+out.join('\n')],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='nghich_ly_nang_hang_ket_qua.csv'; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
@@ -795,9 +1063,11 @@ function csv(){
 
 /* ---------- điều khiển ---------- */
 function buildControls(){
-  const segN=$('#segN'); NS.forEach(n=>{const b=document.createElement('button'); b.textContent=n==='ftse'?'FTSE':n; b.setAttribute('aria-pressed',n===S.N); b.onclick=()=>{S.N=n; syncSeg(); update();}; segN.appendChild(b);});
-  const segT=$('#segT'); TGTS.forEach(([v,l])=>{const b=document.createElement('button'); b.textContent=l; b.setAttribute('aria-pressed',v===S.tgtUsd); b.onclick=()=>{S.tgtUsd=v; $('#tgt').value=v; syncSeg(); update();}; segT.appendChild(b);});
-  const segS=$('#segStage'); STAGES.forEach((st,i)=>{const b=document.createElement('button'); b.textContent=Math.round(st.c*100)+'%'; b.title=st.n; b.setAttribute('aria-label',st.n+', cộng dồn '+Math.round(st.c*100)+'%'); b.setAttribute('aria-pressed',i===S.stage); b.onclick=()=>{S.stage=i; syncSeg(); update();}; segS.appendChild(b);});
+  const mk=(el,items,isOn,on,label)=>items.forEach((it,i)=>{const b=document.createElement('button'); b.type='button'; b.textContent=label(it,i); b.setAttribute('aria-pressed',isOn(it,i)); b.onclick=()=>{on(it,i); syncSeg(); update();}; el.appendChild(b);});
+  mk($('#segN'),NS,n=>n===S.N,n=>{S.N=n;},n=>n==='ftse'?'FTSE':n);
+  mk($('#segT'),TGTS,t=>t[0]===S.tgtUsd,t=>{S.tgtUsd=t[0]; $('#tgt').value=t[0];},t=>t[1]);
+  mk($('#segStage'),STAGES,(st,i)=>i===S.stage,(st,i)=>{S.stage=i;},st=>Math.round(st.c*100)+'%');
+  $$('#segStage button').forEach((b,i)=>{b.title=STAGES[i].n; b.setAttribute('aria-label',STAGES[i].n+', cộng dồn '+Math.round(STAGES[i].c*100)+'%');});
   const map={rmin:['minA',v=>v+' tỷ'],rH:['H',v=>v+' phiên'],rp:['p',v=>v+'%'],rdr:['dr',v=>'+'+v+' điểm'],rdf:['df',v=>'+'+v+' điểm'],rg:['g',v=>'+'+v+'%'],reps:['eps',v=>fmt(v,1)]};
   Object.keys(map).forEach(id=>{const [k,f]=map[id]; const el=$('#'+id); el.value=S[k]; $('#o'+id.slice(1)).textContent=f(S[k]); el.oninput=()=>{S[k]=+el.value; $('#o'+id.slice(1)).textContent=f(S[k]); update();};});
   $('#tgt').oninput=e=>{const v=+e.target.value; if(v>0){S.tgtUsd=v; syncSeg(); update();}}; $('#fx').oninput=e=>{const v=+e.target.value; if(v>20000){S.fx=v; update();}};
@@ -806,15 +1076,15 @@ function buildControls(){
   $('#lq').oninput=e=>{S.lq=e.target.value; drawList();};
 }
 function syncSeg(){$$('#segT button').forEach((b,i)=>b.setAttribute('aria-pressed',TGTS[i][0]===S.tgtUsd)); $$('#segN button').forEach((b,i)=>b.setAttribute('aria-pressed',NS[i]===S.N)); $$('#segStage button').forEach((b,i)=>b.setAttribute('aria-pressed',i===S.stage));}
-let raf=0; function update(){clearTimeout(raf); raf=setTimeout(()=>{drawSim(); if(CUR_TAB==='p4')drawP4();},20);}
+let raf=0; function update(){clearTimeout(raf); raf=setTimeout(()=>{drawSim(); if(CUR_TAB==='p5')drawP5();},20);}
 
 /* ---------- tab ---------- */
-const TABS=['p1','p2','p3','p4']; let CUR_TAB='p1';
-function renderActive(){ if(CUR_TAB==='p1')drawP1(); else if(CUR_TAB==='p2')drawP2(); else if(CUR_TAB==='p4'){drawP4(); centerSel();} }
+const TABS=['p1','p2','p3','p4','p5']; let CUR_TAB='p1';
+function renderActive(){ if(CUR_TAB==='p1')drawP1(); else if(CUR_TAB==='p2')drawP2(); else if(CUR_TAB==='p3')drawP3(); else if(CUR_TAB==='p5'){drawP5(); centerSel();} }
 function show(id,focus){
   CUR_TAB=id;
   TABS.forEach(p=>{const on=p===id; $('#pan'+p.slice(1)).hidden=!on; const b=$('#t'+p.slice(1)); b.setAttribute('aria-selected',on); b.tabIndex=on?0:-1;});
-  if(focus) $('#t'+id.slice(1)).focus();
+  const tb=$('#t'+id.slice(1)); if(focus) tb.focus(); if(tb.scrollIntoView) tb.scrollIntoView({block:'nearest',inline:'nearest'});
   try{history.replaceState(null,'','#'+id);}catch(e){}
   tip.style.display='none'; renderActive(); window.scrollTo(0,0);
 }
@@ -824,9 +1094,9 @@ $('.tabs').addEventListener('keydown',e=>{
   if(e.key==='ArrowRight')j=(i+1)%TABS.length; else if(e.key==='ArrowLeft')j=(i+TABS.length-1)%TABS.length; else if(e.key==='Home')j=0; else if(e.key==='End')j=TABS.length-1;
   if(j!==null){e.preventDefault(); show(TABS[j],true);}
 });
-let rt=0; addEventListener('resize',()=>{clearTimeout(rt); rt=setTimeout(renderActive,120);});
+let rt=0, lastW=innerWidth; addEventListener('resize',()=>{if(innerWidth===lastW)return; lastW=innerWidth; clearTimeout(rt); rt=setTimeout(renderActive,120);});
 
-buildControls(); if(innerWidth<=1040){$$('#pan3 details.adv').forEach(d=>{d.open=false;});} drawStatic(); drawSim();
+buildControls(); if(innerWidth<=1120){$$('#pan4 details.adv').forEach(d=>{d.open=false;});} drawStatic(); drawSim();
 const h0=(location.hash||'').replace('#',''); show(TABS.indexOf(h0)>=0?h0:'p1',false);
 })();
 </script>

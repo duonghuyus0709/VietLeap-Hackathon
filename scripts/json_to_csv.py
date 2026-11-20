@@ -29,6 +29,7 @@ def load(p):
 for f in ['ff_1', 'ff_2', 'ff_3a', 'screener400', 'vnindex_ff']:
     write(f + '.csv', load(f'raw/{f}.json')['data']['records'])
 write('snap400.csv', load('raw/snap400.json')['rows'])
+write('hnx_upcom_ff_net.csv', load('raw/hnx_upcom_ff_net.json')['records'])
 
 # processed
 d = load('processed/data.json')
