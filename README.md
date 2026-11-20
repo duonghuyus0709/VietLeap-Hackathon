@@ -16,18 +16,39 @@ Mở file `index.html` bằng trình duyệt. File tự chứa toàn bộ dữ l
 4. Từng mã: danh sách xếp theo phần bỏ lỡ, chi tiết R, F, L và dòng vốn theo tháng của mã đã chọn, bảng đầy đủ có tải CSV, ghi chú phương pháp và giới hạn.
 
 ## Cấu trúc
-- `index.html`: sản phẩm hoàn chỉnh (dữ liệu đã nhúng).
-- `dashboard.src.html`: mã nguồn giao diện và mô hình tính toán (HTML, CSS, JavaScript thuần, SVG tự vẽ).
-- `data.json`: dữ liệu đã xử lý từ FiinQuantX, ngày chốt 19/11/2026.
-- `build_data.py`: ghép các bảng xuất từ FiinQuantX thành `data.json`.
-- `build_html.py`: nhúng `data.json` vào `dashboard.src.html` để tạo `index.html`.
-- `prompt_dashboard.md`: prompt dùng để dựng dashboard, viết lại từ bộ prompt mẫu của handout (sáu phần ROLE, CONTEXT, TASK, DATA, OUTPUT, QUALITY CHECKS, dựng theo năm giai đoạn).
-- `stage1_numbers.py` và `stage1_numbers.txt`: giai đoạn 1 của prompt, tính và in các con số trước khi vẽ để đối chiếu với giá trị mong đợi.
+```
+.
+├── index.html                  # sản phẩm hoàn chỉnh, dữ liệu đã nhúng (file build, để ở gốc cho GitHub Pages / Netlify)
+├── README.md
+├── src/
+│   ├── dashboard.src.html      # mã nguồn giao diện và mô hình tính toán (HTML, CSS, JavaScript thuần, SVG tự vẽ)
+│   └── data/
+│       ├── raw/                # phản hồi JSON nguyên bản từ FiinQuant MCP, ngày dữ liệu 19/11/2026
+│       │   ├── screener400.json    # screen_stocks: vốn hóa, room còn lại, sở hữu ngoại, GTGD bình quân, 400 mã vốn hóa lớn nhất
+│       │   ├── snap400.json        # get_equity_snapshot: free_float_ratio, outstanding_shares, avg_matched_value
+│       │   ├── ff_1.json, ff_2.json, ff_3a.json  # get_market_statistics(foreign_flow, Monthly), 124 mã lớn nhất
+│       │   └── vnindex_ff.json     # get_market_statistics(['VNINDEX'], foreign_flow, Monthly), tổng toàn thị trường
+│       └── processed/
+│           └── data.json       # dữ liệu đã hợp nhất cho dashboard
+├── scripts/
+│   ├── build_data.py           # src/data/raw → src/data/processed/data.json
+│   ├── stage1_numbers.py       # giai đoạn 1 của prompt: tính và in các con số kiểm trước khi vẽ
+│   └── build_html.py           # nhúng data.json vào src/dashboard.src.html → index.html
+└── docs/
+    ├── prompt_dashboard.md     # prompt dựng dashboard (sáu phần ROLE, CONTEXT, TASK, DATA, OUTPUT, QUALITY CHECKS, năm giai đoạn)
+    └── stage1_numbers.txt      # kết quả của scripts/stage1_numbers.py để đối chiếu
+```
+
+Đơn vị trong `data.json`: giá trị tính bằng tỷ đồng, tỷ lệ là số thập phân. Trong file thô, giá trị tính bằng đồng.
+
+`screener400.json` là 400 mã có vốn hóa lớn nhất, lọc từ toàn bộ 1.541 mã mà `screen_stocks` trả về (bỏ ETF và mã không có vốn hóa). F88 nằm trong top 125 nhưng FiinQuantX không có dữ liệu foreign_flow theo tháng, nên còn 124 mã.
 
 ## Dựng lại
-    python3 build_data.py       # cần các file xuất từ FiinQuantX nêu trong đầu file
-    python3 stage1_numbers.py   # in các con số kiểm
-    python3 build_html.py
+Chạy từ gốc repo:
+
+    python3 scripts/build_data.py       # src/data/raw → src/data/processed/data.json
+    python3 scripts/stage1_numbers.py   # in các con số kiểm, so với docs/stage1_numbers.txt
+    python3 scripts/build_html.py       # tạo index.html
 
 ## Truy vết các con số chính
 | Số trên trang | Nguồn và công thức |

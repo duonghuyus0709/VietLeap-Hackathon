@@ -1,8 +1,9 @@
 """stage1_numbers.py: Stage 1 của prompt, tính và in các bảng số trước khi dựng HTML.
-Đầu vào: data.json (từ build_data.py). Không tạo số nào ngoài dữ liệu và công thức trong prompt."""
+Đầu vào: src/data/processed/data.json (từ scripts/build_data.py). Không tạo số nào ngoài dữ liệu và công thức trong prompt."""
 import json, statistics as st
 from collections import defaultdict
-D = json.load(open('data.json')); S = D['stocks']; M = D['monthly']
+from pathlib import Path
+D = json.load(open(Path(__file__).resolve().parent.parent / 'src' / 'data' / 'processed' / 'data.json', encoding='utf-8')); S = D['stocks']; M = D['monthly']
 PAR = dict(N=100, stage=1.0, H=250, p=10, dr=0, df=0, g=0, eps=.5, tgtUsd=6, fx=25650, minA=10)
 
 def model(**kw):
