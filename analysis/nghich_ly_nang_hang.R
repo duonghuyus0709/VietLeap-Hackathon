@@ -1,6 +1,3 @@
-# analysis/nghich_ly_nang_hang.R: toàn bộ mã R của báo cáo, tách từ nghich_ly_nang_hang.Rmd bằng knitr::purl().
-# Chạy từ thư mục analysis/: Rscript nghich_ly_nang_hang.R (đọc dữ liệu ở ../data/csv).
-
 ## ----setup, include=FALSE-----------------------------------------------------
 knitr::opts_chunk$set(
   echo = TRUE,
