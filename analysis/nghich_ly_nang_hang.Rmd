@@ -4,6 +4,9 @@ title: 'Nghịch lý nâng hạng: room ngoại, kênh thỏa thuận và khả 
 author: "VietLeap Hackathon 2026, Nhóm 7"
 date: "20/11/2026"
 output:
+  word_document:
+    toc: true
+    toc_depth: '3'
   html_document:
     theme: flatly
     toc: true
@@ -12,9 +15,6 @@ output:
     number_sections: true
     code_folding: show
     self_contained: true
-  word_document:
-    toc: true
-    toc_depth: '3'
   pdf_document:
     toc: true
     toc_depth: '3'
@@ -44,8 +44,8 @@ suppressPackageStartupMessages({
   library(dplyr); library(tidyr); library(readr); library(ggplot2); library(scales)
   library(patchwork); library(fixest); library(sandwich); library(lmtest); library(car)
 })
-# Dữ liệu CSV trong repo, do scripts/json_to_csv.py tạo từ src/data/raw (render từ thư mục analysis/)
-rd  <- function(f) read_csv(file.path("..", "src", "data", "csv", f), show_col_types = FALSE, locale = locale(encoding = "UTF-8"))
+# Dữ liệu CSV trong repo, do scripts/json_to_csv.py tạo từ data/raw (render từ thư mục analysis/)
+rd  <- function(f) read_csv(file.path("..", "data", "csv", f), show_col_types = FALSE, locale = locale(encoding = "UTF-8"))
 TY  <- 1e9
 f1  <- function(x, d = 1) formatC(as.numeric(unlist(x)), format = "f", digits = d, big.mark = ",")
 pc  <- function(x, d = 1) paste0(f1(100 * x, d), "%")
@@ -146,11 +146,23 @@ ftse_out <- fsel %>% arrange(desc(mc)) %>% slice_head(n = 60) %>% filter(san == 
 ftse_lost <- ftse_out %>% filter(hr6 < 0.2, fol >= 0.1) %>%
   mutate(need = pmax(0, (0.2 * fol - room) / 0.8), usd = 1500 * inv / sum(ftse_in$inv)) %>% arrange(desc(usd))
 lost_usd <- sum(ftse_lost$usd)
+# Hàm ý chính sách (Mục 10): chia các mã bị FTSE loại theo mức khó khi đưa headroom lên 20%
+iv    <- function(expr, alt = "(xem Mục 10)") tryCatch(expr, error = function(e) alt)   # giá trị nội dòng an toàn
+usd_m <- function(x) x / 25.65                                                          # tỷ đồng -> triệu US$ (25.650 VND/USD)
+NH <- c("ABB", "ACB", "BAB", "BID", "BVB", "CTG", "EIB", "HDB", "KLB", "LPB", "MBB", "MSB", "NAB", "NVB", "OCB",
+        "PGB", "SGB", "SHB", "SSB", "STB", "TCB", "TPB", "VAB", "VBB", "VCB", "VIB", "VPB")
+# Trần luật định: 30% với ngân hàng (Nghị định 01/2014), 49% với doanh nghiệp khác.
+# Bước 0: đã đạt 20% headroom; Bước 1: đạt được trong trần luật định (doanh nghiệp tự nâng); Bước 2: phải vượt trần luật định.
+pol1 <- tryCatch(ftse_lost %>%
+  mutate(tran_luat = ifelse(nganh %in% "Ngân hàng" | t %in% NH, 0.30, 0.49),
+         buoc = case_when(need <= 1e-9 ~ "Bước 0", fol + need <= tran_luat + 1e-9 ~ "Bước 1", TRUE ~ "Bước 2")),
+  error = function(e) NULL)
+share_nolaw <- iv(sum(pol1$usd[pol1$buoc != "Bước 2"]) / lost_usd, NA)
 ```
 
 Nghiên cứu này kiểm chứng một nghịch lý của thị trường chứng khoán Việt Nam năm 2026. FTSE Russell nâng hạng Việt Nam lên thị trường mới nổi thứ cấp, có hiệu lực từ ngày 21/9/2026, và theo ước tính của FTSE sẽ thu hút khoảng US\$6 tỷ vốn ngoại (gồm cả quỹ chủ động), trong đó vốn thụ động khoảng US\$1,5 tỷ, giải ngân theo bốn đợt đến tháng 9/2027. Thế nhưng từ 01/01 đến 19/11/2026, khối ngoại **bán ròng `r f1(-ytd_net/1000)` nghìn tỷ đồng** trên sàn HOSE (`r f1(-ytd_all/1000)` nghìn tỷ nếu cộng cả HNX và UPCoM) và **`r sum(mo$net < 0)` trên `r nrow(mo)` tháng đều âm**, kể cả sau ngày hiệu lực. Bài viết sử dụng dữ liệu FiinQuantX của 400 mã vốn hóa lớn nhất, chuỗi dòng vốn ngoại theo tháng của 124 mã lớn nhất và tổng của từng sàn, đi qua đủ bốn bước: xử lý dữ liệu, thống kê mô tả và trực quan hóa, ước lượng mô hình kinh tế lượng, và mô phỏng khả năng hấp thụ dòng vốn.
 
-Về mặt cơ chế, nghiên cứu dựa trên lý thuyết giới hạn sở hữu nước ngoài và thị trường song song (Bailey & Jagtiani, 1994; Stulz & Wasserfallen, 1995), lý thuyết đường cầu cổ phiếu dốc xuống khi có cú sốc cầu chỉ số (Shleifer, 1986) và lý thuyết tác động giá theo thanh khoản (Kyle, 1985; Amihud, 2002). Kết quả chính gồm bốn điểm. Thứ nhất, chuỗi bán ròng mang tính hệ thống: xác suất có 11 trên 11 tháng âm nếu dòng vốn chỉ dao động ngẫu nhiên quanh 0 là `r formatC(0.5^11, format="f", digits=5)`. Thứ hai, trên bảng dữ liệu `r nrow(pn)` quan sát mã theo tháng, khi room còn lại dưới 10% tổng room, tỷ trọng giao dịch thỏa thuận của khối ngoại **cao hơn `r f1(100*coef(m_p2)["tight"])` điểm phần trăm** so với nhóm còn từ 30% room trở lên (sai số chuẩn cụm theo mã, $p$ `r pe(coeftable(m_p2)["tight",4])`), và kết quả vẫn giữ dấu và ý nghĩa khi khử hiệu ứng cố định từng mã (`r f1(100*coef(m_p4)["tight"])` điểm phần trăm), dù nguồn biến động trong mã chỉ đến từ một số ít ngân hàng đổi trạng thái room trong năm. Mô hình Logit cho thấy tỷ số chênh để một tháng do kênh thỏa thuận chi phối ở nhóm hết room là **`r f1(or_tight, 2)` lần**. Thứ ba, quan hệ này là một ngưỡng chứ không phải bậc thang: nhóm room 10% đến 30% không khác biệt có ý nghĩa với nhóm room rộng. Thứ tư, mô phỏng hấp thụ cho thấy với US\$1,5 tỷ vốn thụ động, rổ `r nrow(b0)` mã hấp thụ được **`r pc(cov0)`** nhu cầu; toàn bộ phần bỏ lỡ nằm ở `r short_n(b0)` mã bị room chặn, riêng `r top_t` chiếm `r pc(top_share, 0)`. Nới room thêm 5 điểm phần trăm là đòn bẩy đơn lẻ hiệu quả nhất (độ phủ `r pc(lev_cov[1])`). Nếu tính cả quỹ chủ động (US\$6 tỷ), độ phủ giảm còn **`r pc(cov6)`** và cả ba đòn bẩy đưa lên `r pc(cov6_all)`. Danh mục FTSE thật xác nhận vai trò của room theo một kênh khác: `r nrow(ftse_lost)` mã HOSE lớn bị loại vì headroom dưới 20%, tương ứng khoảng **`r f1(lost_usd, 0)` triệu US\$** vốn thụ động mà các mã này lẽ ra có thể nhận. Các kết luận là quan hệ thống kê có điều kiện, chưa phải quan hệ nhân quả.
+Về mặt cơ chế, nghiên cứu dựa trên lý thuyết giới hạn sở hữu nước ngoài và thị trường song song (Bailey & Jagtiani, 1994; Stulz & Wasserfallen, 1995), lý thuyết đường cầu cổ phiếu dốc xuống khi có cú sốc cầu chỉ số (Shleifer, 1986) và lý thuyết tác động giá theo thanh khoản (Kyle, 1985; Amihud, 2002). Kết quả chính gồm bốn điểm. Thứ nhất, chuỗi bán ròng mang tính hệ thống: xác suất có 11 trên 11 tháng âm nếu dòng vốn chỉ dao động ngẫu nhiên quanh 0 là `r formatC(0.5^11, format="f", digits=5)`. Thứ hai, trên bảng dữ liệu `r nrow(pn)` quan sát mã theo tháng, khi room còn lại dưới 10% tổng room, tỷ trọng giao dịch thỏa thuận của khối ngoại **cao hơn `r f1(100*coef(m_p2)["tight"])` điểm phần trăm** so với nhóm còn từ 30% room trở lên (sai số chuẩn cụm theo mã, $p$ `r pe(coeftable(m_p2)["tight",4])`), và kết quả vẫn giữ dấu và ý nghĩa khi khử hiệu ứng cố định từng mã (`r f1(100*coef(m_p4)["tight"])` điểm phần trăm), dù nguồn biến động trong mã chỉ đến từ một số ít ngân hàng đổi trạng thái room trong năm. Mô hình Logit cho thấy tỷ số chênh để một tháng do kênh thỏa thuận chi phối ở nhóm hết room là **`r f1(or_tight, 2)` lần**. Thứ ba, quan hệ này là một ngưỡng chứ không phải bậc thang: nhóm room 10% đến 30% không khác biệt có ý nghĩa với nhóm room rộng. Thứ tư, mô phỏng hấp thụ cho thấy với US\$1,5 tỷ vốn thụ động, rổ `r nrow(b0)` mã hấp thụ được **`r pc(cov0)`** nhu cầu; toàn bộ phần bỏ lỡ nằm ở `r short_n(b0)` mã bị room chặn, riêng `r top_t` chiếm `r pc(top_share, 0)`. Nới room thêm 5 điểm phần trăm là đòn bẩy đơn lẻ hiệu quả nhất (độ phủ `r pc(lev_cov[1])`). Nếu tính cả quỹ chủ động (US\$6 tỷ), độ phủ giảm còn **`r pc(cov6)`** và cả ba đòn bẩy đưa lên `r pc(cov6_all)`. Danh mục FTSE thật xác nhận vai trò của room theo một kênh khác: `r nrow(ftse_lost)` mã HOSE lớn bị loại vì headroom dưới 20%, tương ứng khoảng **`r f1(lost_usd, 0)` triệu US\$** vốn thụ động mà các mã này lẽ ra có thể nhận. Từ các kết quả này, nghiên cứu đề xuất ba ưu tiên chính sách xếp theo vốn thu về và độ chắc của bằng chứng (Mục 10): (1) đưa các mã bị FTSE loại trở lại ngưỡng headroom 20%, trong đó khoảng **`r iv(pc(share_nolaw, 0))`** số vốn có thể lấy lại mà không cần sửa luật; (2) giữ lộ trình giải ngân nhiều đợt và chuẩn bị thanh khoản cho kịch bản vốn lớn; (3) công bố tỷ trọng thỏa thuận của khối ngoại theo mã làm chỉ báo cảnh báo sớm nghẽn room. Các kết luận là quan hệ thống kê có điều kiện, chưa phải quan hệ nhân quả.
 
 # Mở đầu và cơ sở lý thuyết của vấn đề nghiên cứu
 
@@ -256,7 +268,7 @@ Giới hạn đạt cực tiểu là nút thắt của mã. Ba đòn bẩy chín
 
 ## Nguồn dữ liệu
 
-Dữ liệu được nhóm truy xuất từ FiinQuantX qua FiinQuant MCP, chốt ngày 19/11/2026, và chuyển sang CSV bằng `scripts/json_to_csv.py` (thư mục `src/data/csv`). Ròng của VN-Index là của sàn HOSE; số của cả ba sàn cộng thêm HNXINDEX và UPCOMINDEX. Danh sách 27 mã FTSE lấy từ FAQ chính thức của FTSE Russell (v1.3, 25/8/2026). Báo cáo này xử lý lại từ các tệp CSV thô (không dùng `data.json` đã xử lý sẵn) để kiểm chứng độc lập quy trình của `build_data.py`. Quy ước số: dấu chấm thập phân và dấu phẩy phân tách hàng nghìn theo đầu ra R; giá trị tiền tính bằng tỷ đồng trừ khi ghi khác.
+Dữ liệu được nhóm truy xuất từ FiinQuantX qua FiinQuant MCP, chốt ngày 19/11/2026, và chuyển sang CSV bằng `scripts/json_to_csv.py` (thư mục `data/csv`). Ròng của VN-Index là của sàn HOSE; số của cả ba sàn cộng thêm HNXINDEX và UPCOMINDEX. Danh sách 27 mã FTSE lấy từ FAQ chính thức của FTSE Russell (v1.3, 25/8/2026). Báo cáo này xử lý lại từ các tệp CSV thô (không dùng `data.json` đã xử lý sẵn) để kiểm chứng độc lập quy trình của `build_data.py`. Quy ước số: dấu chấm thập phân và dấu phẩy phân tách hàng nghìn theo đầu ra R; giá trị tiền tính bằng tỷ đồng trừ khi ghi khác.
 
 ## Nạp thư viện và dữ liệu thô vào R
 
@@ -264,7 +276,7 @@ Dữ liệu được nhóm truy xuất từ FiinQuantX qua FiinQuant MCP, chốt
 library(dplyr); library(tidyr); library(readr); library(ggplot2); library(scales)
 library(patchwork); library(fixest); library(sandwich); library(lmtest); library(car)
 
-rd <- function(f) read_csv(file.path("..", "src", "data", "csv", f), show_col_types = FALSE,
+rd <- function(f) read_csv(file.path("..", "data", "csv", f), show_col_types = FALSE,
                            locale = locale(encoding = "UTF-8"))
 TY   <- 1e9                                    # đồng -> tỷ đồng
 scr  <- rd("screener400.csv")                  # screen_stocks: 400 mã vốn hóa lớn nhất
@@ -917,41 +929,319 @@ sumh <- tibble(
     paste0("β_room = ", f1(t3["room", 1], 3), "; p = ", f1(t3["room", 4], 3)),
     paste0("Độ phủ ", pc(cov0), " (US\\$6 tỷ: ", pc(cov6), "); nút thắt thanh khoản ", sum(b0$bind == "Thanh khoản"), " mã, room ", sum(b0$bind == "Room"), " mã")),
   `Kết luận` = c(
-    ifelse(sg$p.value < 0.05, "Chấp nhận H1", "Chưa đủ bằng chứng"),
-    ifelse(g(m_p2, "tight", 4) < 0.05 & g(m_p2, "tight", 1) > 0, "Chấp nhận H2", "Chưa đủ bằng chứng"),
-    ifelse(g(m_p2, "narrow", 4) < 0.05 & g(m_p2, "narrow", 1) > 0, "Chấp nhận H3", "Không ủng hộ H3 (quan hệ dạng ngưỡng)"),
-    ifelse(g(m_p4, "tight", 4) < 0.05 & g(m_p4, "tight", 1) > 0, "Chấp nhận H4", "Chưa đủ bằng chứng"),
-    ifelse(ct[2, 4] < 0.05 & ct[2, 1] > 0, "Chấp nhận H5", "Chưa đủ bằng chứng"),
-    ifelse(t3["room", 4] >= 0.10 & t4["room", 4] >= 0.10 & t5["room", 4] >= 0.10, "Ủng hộ H6", "Không ủng hộ H6"),
+    ifelse(sg$p.value < 0.05, "Dữ liệu ủng hộ H1", "Chưa đủ bằng chứng"),
+    ifelse(g(m_p2, "tight", 4) < 0.05 & g(m_p2, "tight", 1) > 0, "Dữ liệu ủng hộ H2", "Chưa đủ bằng chứng"),
+    ifelse(g(m_p2, "narrow", 4) < 0.05 & g(m_p2, "narrow", 1) > 0, "Dữ liệu ủng hộ H3", "Không ủng hộ H3 (quan hệ dạng ngưỡng)"),
+    ifelse(g(m_p4, "tight", 4) < 0.05 & g(m_p4, "tight", 1) > 0, "Dữ liệu ủng hộ H4", "Chưa đủ bằng chứng"),
+    ifelse(ct[2, 4] < 0.05 & ct[2, 1] > 0, "Dữ liệu ủng hộ H5", "Chưa đủ bằng chứng"),
+    ifelse(t3["room", 4] >= 0.10 & t4["room", 4] >= 0.10 & t5["room", 4] >= 0.10, "Không bác bỏ H6 (không tìm thấy bằng chứng room giải thích bán ròng)", "Không ủng hộ H6"),
     ifelse(cov0 < 1 & sum(b0$bind == "Thanh khoản") > sum(b0$bind == "Room"), "Phù hợp H7", "Không phù hợp H7")))
 knitr::kable(sumh, caption = "Bảng 8.1: Tổng hợp kết quả kiểm định các giả thuyết nghiên cứu")
 ```
 
-# Thảo luận, kết luận và hàm ý chính sách
+# Thảo luận và kết luận
 
 ## Thảo luận kết quả
 
 **Nghịch lý là có thật nhưng cần đọc đúng.** Bán ròng `r f1(-ytd_net/1000)` nghìn tỷ đồng trong 11 tháng liên tiếp không phải nhiễu ngẫu nhiên. Tuy nhiên, theo lộ trình của FTSE, dòng vốn thụ động mới bắt đầu giải ngân từ đợt đầu tiên và tỷ trọng cộng dồn chỉ đạt 100% vào tháng 9/2027, trong khi dòng bán năm 2026 chủ yếu đến từ kênh khớp lệnh và tập trung ở một nhóm nhỏ mã vốn hóa lớn. Nói cách khác, nâng hạng chưa đủ để bù dòng bán chủ động của các quỹ, và dữ liệu đến 19/11/2026 chưa cho phép kết luận về tác động của các đợt giải ngân sau.
 
-**Room là điểm nghẽn dạng ngưỡng.** Bằng chứng từ bảng dữ liệu cho thấy khi room còn dưới 10%, khối ngoại phải chuyển sang giao dịch thỏa thuận với nhau, với tỷ trọng thỏa thuận cao hơn khoảng `r f1(100*g(m_p2,"tight",1),0)` điểm phần trăm. Kết quả vững qua `r nrow(rob_tab)` đặc tả ở Bảng 6.6 và qua các kiểm tra riêng cho mô hình hiệu ứng cố định ở Bảng 6.7. Hệ số lớn dần khi ngưỡng hạ thấp và đạt `r f1(100*rob_tab[[2]][5],0)` điểm khi room cạn hẳn dưới 1%. Hàm ý là room không cản trở dòng vốn một cách từ từ, mà gây ra một "vách đứng" khi gần cạn; chính sách nới room có tác dụng lớn nhất ở những mã đang sát vách.
+**Room là điểm nghẽn dạng ngưỡng.** Bằng chứng từ bảng dữ liệu cho thấy khi room còn dưới 10%, khối ngoại phải chuyển sang giao dịch thỏa thuận với nhau, với tỷ trọng thỏa thuận cao hơn khoảng `r f1(100*g(m_p2,"tight",1),0)` điểm phần trăm. Kết quả vững qua `r nrow(rob_tab)` đặc tả ở Bảng 6.6 và qua các kiểm tra riêng cho mô hình hiệu ứng cố định ở Bảng 6.7. Hệ số lớn dần khi ngưỡng hạ thấp và đạt `r f1(100*rob_tab[[2]][5],0)` điểm khi room cạn hẳn dưới 1%. Hàm ý là room không cản trở dòng vốn một cách từ từ, mà gây ra một "vách đứng" khi gần cạn.
 
-**Mức độ nghẽn phụ thuộc quy mô vốn.** Với US\$1,5 tỷ vốn thụ động, rổ hấp thụ `r pc(cov0)` và toàn bộ phần bỏ lỡ nằm ở `r short_n(b0)` mã bị room chặn; thanh khoản là giới hạn chặt nhất của `r sum(b0$bind=="Thanh khoản")` mã nhưng chưa thực sự chặn nhu cầu. Khi tính cả quỹ chủ động (US\$6 tỷ), độ phủ giảm còn `r pc(cov6)` và thanh khoản trở thành nút thắt thực sự của nhiều mã; khi đó thời gian giải ngân H là tham số quan trọng nhất. Room còn tác động qua kênh thứ hai: `r nrow(ftse_lost)` mã HOSE lớn không được FTSE chọn vì headroom dưới 20%, tương ứng khoảng `r f1(lost_usd,0)` triệu US\$ vốn thụ động.
+**Mức độ nghẽn phụ thuộc quy mô vốn.** Với US\$1,5 tỷ vốn thụ động, rổ hấp thụ `r pc(cov0)` và toàn bộ phần bỏ lỡ nằm ở `r short_n(b0)` mã bị room chặn; thanh khoản là giới hạn chặt nhất của `r sum(b0$bind=="Thanh khoản")` mã nhưng chưa thực sự chặn nhu cầu. Khi tính cả quỹ chủ động (US\$6 tỷ), độ phủ giảm còn `r pc(cov6)` và thanh khoản trở thành nút thắt thực sự của nhiều mã. Room còn tác động qua kênh thứ hai: `r nrow(ftse_lost)` mã HOSE lớn không được FTSE chọn vì headroom dưới 20%, tương ứng khoảng `r f1(lost_usd,0)` triệu US\$ vốn thụ động.
 
-## Hàm ý chính sách
+## Kết luận
 
-**Ưu tiên 1, nới room có mục tiêu.** Mô phỏng cho thấy nới room thêm 5 điểm phần trăm nâng độ phủ `r f1(100*(lev_cov[1]-cov0))` điểm ở US\$1,5 tỷ, nhiều nhất trong ba đòn bẩy ở mức khả thi và vẫn đứng đầu ở US\$6 tỷ. Vì quan hệ có dạng ngưỡng và dốc nhất ngay tại điểm hết room, việc giữ cho các mã không chạm 0% room có giá trị hơn nới đồng loạt. Hai nhóm nên ưu tiên: các "điểm nóng" trong rổ (`r paste(hot$t, collapse = ", ")`), và các mã lớn bị FTSE loại vì headroom dưới 20% (`r paste(ftse_lost$t[ftse_lost$need > 0], collapse = ", ")` cần nới thêm; `r paste(ftse_lost$t[ftse_lost$need == 0], collapse = " và ")` đã trở lại trên ngưỡng theo số liệu 19/11 và có thể được xét ở kỳ sau). Nhiều ngân hàng tư nhân trong nhóm này đang tự đặt giới hạn sở hữu thấp hơn trần pháp lý, nên đây là việc doanh nghiệp có thể làm ngay qua đại hội cổ đông.
+Ba câu hỏi nghiên cứu đều có câu trả lời từ dữ liệu. Bán ròng năm 2026 mang tính hệ thống và lớn hơn nhiều lần dòng vốn thụ động mà nâng hạng mang lại. Room cạn đi kèm sự chuyển dịch rõ rệt sang kênh thỏa thuận, theo dạng ngưỡng chứ không theo dạng bậc thang. Khi vốn thụ động vào, thị trường hấp thụ được phần lớn, và phần hụt tập trung ở một số ít mã cụ thể bị room chặn, cả trong lượng mua lẫn trong việc mã có được vào rổ chỉ số hay không. Mục 10 chuyển các kết quả này thành các ưu tiên chính sách có thứ tự.
 
-**Ưu tiên 2, hỗ trợ thanh khoản và kéo dài lộ trình giải ngân.** Thanh khoản là giới hạn chặt nhất của đa số mã và trở thành nút thắt thực sự khi tổng vốn lớn hơn (ở US\$6 tỷ, `r sum(b6$gap > 1e-6 & b6$bind == "Thanh khoản")` mã thiếu dư địa do thanh khoản). Vì vậy các biện pháp tăng thanh khoản (tạo lập thị trường, giảm chi phí giao dịch, mở rộng sản phẩm phòng ngừa rủi ro) và phối hợp với nhà cung cấp chỉ số về lộ trình giải ngân có tác dụng lên toàn rổ. Ở kịch bản US\$6 tỷ, `r top6_t` một mình chiếm `r pc(top6_share,0)` phần bỏ lỡ, cho thấy một mã có trọng số lớn nhưng thanh khoản không tương xứng có thể tạo ra phần lớn khoảng trống.
+# Hàm ý chính sách
 
-**Ưu tiên 3, minh bạch kênh thỏa thuận.** Tỷ trọng thỏa thuận cao ở các mã hết room là tín hiệu của một thị trường song song có phần bù giá. Công bố định kỳ thống kê giao dịch thỏa thuận của khối ngoại theo mã giúp nhà đầu tư và cơ quan quản lý theo dõi mức độ nghẽn room.
+Mục này trả lời câu hỏi "nên làm gì trước". Mỗi ưu tiên được trình bày theo cùng một cấu trúc: **khuyến nghị** (làm gì, ai làm, khi nào), **bằng chứng** (kết quả đã ước lượng ở Mục 5 đến Mục 8, kèm hình và bảng), **lập luận** nối bằng chứng với khuyến nghị, và **điều kiện** để khuyến nghị đúng. Thứ tự ưu tiên không do nhóm chọn theo cảm nhận mà theo ba tiêu chí đo được: (i) vốn thụ động thu về ở kịch bản chính US\$1,5 tỷ, (ii) độ chắc của bằng chứng thống kê, (iii) mức dễ thực hiện, tức có cần thay đổi khung pháp lý hay không.
+
+## Nguyên tắc xếp hạng: room chặn vốn ở kênh nào nhiều nhất
+
+```{r pol_channel, error=TRUE, fig.height=2.8, fig.cap="Hình 10.1: Vốn thụ động bị chặn theo từng kênh, kịch bản US\\$1,5 tỷ (triệu US\\$)"}
+abs100 <- usd_m(sum(b0$gap)); absF <- usd_m(sum(bF$gap))
+bindF  <- if (sum(bF$gap) > 1e-6) names(which.max(tapply(bF$gap, bF$bind, sum))) else "Thanh khoản"
+kenh <- tibble(
+  kenh = c(paste0("Room, kênh loại mã (", nrow(ftse_lost), " mã bị FTSE loại)"),
+           paste0("Room, kênh hấp thụ (rổ ", nrow(b0), " mã, ", short_n(b0), " mã thiếu dư địa)"),
+           paste0(bindF, ", kênh hấp thụ (rổ ", nrow(bF), " mã FTSE thật)")),
+  v    = c(lost_usd, abs100, absF),
+  loai = c("Room", "Room", bindF))
+ggplot(kenh, aes(v, reorder(kenh, v), fill = loai)) + geom_col(width = 0.6) +
+  geom_text(aes(label = f1(v, 0)), hjust = -0.2, size = 3.4) +
+  scale_fill_manual(values = c("Room" = unname(COL["room"]), "Thanh khoản" = unname(COL["liq"]),
+                               "Free float" = unname(COL["ff"]))) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.12))) +
+  labs(x = "Triệu US$", y = NULL)
+```
+
+**Cách đọc:** room làm mất vốn chủ yếu qua **kênh loại mã**, khoảng `r iv(f1(lost_usd, 0))` triệu US\$, gấp `r iv(f1(lost_usd / abs100))` lần phần hụt ở kênh hấp thụ của rổ 100 mã (`r iv(f1(abs100, 0))` triệu US\$). Với rổ 27 mã FTSE thật, phần hụt hấp thụ chỉ còn `r iv(f1(absF, 0))` triệu US\$ và nằm ở nhóm `r iv(tolower(bindF))`, vì FTSE đã loại sẵn các mã ít room. Vì vậy ưu tiên số một phải nhắm vào việc đưa các mã bị loại trở lại đủ điều kiện, chứ không phải nới room chung cho cả thị trường.
+
+```{r pol_rank, error=TRUE}
+st15 <- scen_tab[1, ]; st6 <- scen_tab[3, ]; stF <- scen_tab[4, ]
+rank_tab <- tibble(
+  c1 = c("1", "2", "3"),
+  c2 = c("Đưa các mã bị FTSE loại trở lại headroom ≥ 20%; giữ mã lớn không chạm 0% room",
+                           "Giữ lộ trình giải ngân nhiều đợt; tăng thanh khoản nhóm mã lớn",
+                           "Công bố tỷ trọng thỏa thuận của khối ngoại theo mã làm chỉ báo cảnh báo sớm"),
+  c3 = c(paste0(f1(lost_usd, 0), " + ", f1(abs100, 0)),
+                                   paste0(f1(st15[[6]] * 15, 0), " (rổ 100 mã); ", f1(stF[[6]] * 15, 0), " (rổ FTSE)"),
+                                   "Gián tiếp"),
+  c4 = c(paste0(f1(st6[[4]] * 60, 0), " (room +5)"), paste0(f1(st6[[6]] * 60, 0), " (thanh khoản +20%)"), "Gián tiếp"),
+  c5 = c("H2, H4, H5, H7; Bảng 6.6; Bảng 7.5", "H7; Bảng 7.4; Hình 7.3", "H2, H5; Bảng 5.2; Bảng 6.4"),
+  c6 = c(paste0("Cao: ", pc(share_nolaw, 0), " số vốn không cần sửa luật"),
+                    "Trung bình: cần nhiều cơ quan phối hợp", "Cao nhất: dữ liệu đã có, chi phí thấp"))
+names(rank_tab) <- c("Ưu tiên", "Đòn bẩy chính sách", "US\\$1,5 tỷ (triệu US\\$)", "US\\$6 tỷ (triệu US\\$)",
+                     "Bằng chứng chính", "Mức khả thi")
+knitr::kable(rank_tab, caption = "Bảng 10.1: Xếp hạng ba ưu tiên chính sách theo vốn thu về, bằng chứng và mức khả thi")
+```
+
+Ở kịch bản US\$1,5 tỷ, tăng thanh khoản 20% gần như không thêm độ phủ cho rổ 100 mã, nên Ưu tiên 2 đứng sau Ưu tiên 1. Ưu tiên 3 không trực tiếp đưa vốn vào nhưng có chi phí thấp nhất và giúp hai ưu tiên trên hành động kịp thời.
+
+```{r pol_map, error=TRUE}
+emap <- tibble(
+  `Kết quả đã ước lượng` = c(
+    paste("H1:", sumh[[3]][1]), paste("H2:", sumh[[3]][2]), paste("H3:", sumh[[3]][3]),
+    paste("H4:", sumh[[3]][4]), paste("H5:", sumh[[3]][5]), paste("H6:", sumh[[3]][6]),
+    paste0("H7: độ phủ ", pc(cov0), "; ", short_n(b0), " mã thiếu dư địa vì room"),
+    paste0("Bảng 7.5: ", nrow(ftse_lost), " mã bị FTSE loại, khoảng ", f1(lost_usd, 0), " triệu US\\$"),
+    paste0("Hình 7.3: giải ngân 20 phiên, p = 10% chỉ phủ ", f1(100 * grid$c[grid$H == 20 & grid$p == 10], 0), "%"),
+    paste0("US\\$6 tỷ: ", sum(b6$gap > 1e-6 & b6$bind == "Thanh khoản"), " mã thiếu dư địa vì thanh khoản; ", top6_t, " chiếm ", pc(top6_share, 0), " phần bỏ lỡ"),
+    "Hình 5.4: ca TCB, room bằng 0 đi kèm thỏa thuận chiếm phần lớn giao dịch"),
+  `Ưu tiên 1` = c("", "Chính", "Phụ", "Chính", "Phụ", "", "Chính", "Chính", "", "Phụ", "Phụ"),
+  `Ưu tiên 2` = c("", "", "", "", "", "", "Phụ", "", "Chính", "Chính", ""),
+  `Ưu tiên 3` = c("", "Chính", "", "", "Chính", "", "", "", "", "", "Chính"),
+  `Ranh giới` = c("Giới hạn", "", "Giới hạn", "", "", "Giới hạn", "", "", "", "", ""))
+knitr::kable(emap, caption = "Bảng 10.2: Bản đồ bằng chứng. \"Chính\": căn cứ trực tiếp của khuyến nghị; \"Phụ\": căn cứ bổ trợ; \"Giới hạn\": kết quả đặt ranh giới cho khuyến nghị (Mục 10.5)")
+```
+
+## Ưu tiên 1: đưa các mã bị FTSE loại trở lại headroom 20%, làm phần dễ trước
+
+**Khuyến nghị.** Chia các mã HOSE lớn bị FTSE loại thành ba bước theo mức khó, đo bằng việc có cần thay đổi khung pháp lý hay không:
+
+- **Bước 0, không cần thay đổi:** các mã đã trở lại trên 20% headroom theo số liệu 19/11/2026 (`r iv(paste(pol1$t[pol1$buoc == "Bước 0"], collapse = ", "))`). Doanh nghiệp chỉ cần giữ headroom đến ngày chốt dữ liệu của kỳ rà soát tới, tránh phát hành riêng lẻ cho nhà đầu tư ngoại làm lấp room.
+- **Bước 1, doanh nghiệp tự làm trong khung hiện hành:** các mã đang tự đặt trần sở hữu nước ngoài thấp hơn mức luật định (`r iv(paste(pol1$t[pol1$buoc == "Bước 1"], collapse = ", "))`). Đại hội đồng cổ đông nâng trần lên mức đủ đạt 20% headroom. Nghị định 245/2025/NĐ-CP đã bãi bỏ quy định cho phép công ty đại chúng tự đặt trần thấp hơn mức luật định và cho phép giữ nguyên hoặc tăng dần trần đã công bố về mức luật định; MBB, là ngân hàng nhận chuyển giao bắt buộc, còn có thể nâng tới 49% theo Nghị định 69/2025/NĐ-CP.
+- **Bước 2, cần cơ quan quản lý quyết định:** các mã đã chạm trần pháp lý (`r iv(paste(pol1$t[pol1$buoc == "Bước 2"], collapse = ", "))`), gồm ngân hàng có vốn Nhà nước chi phối với trần 30% theo Nghị định 01/2014/NĐ-CP và doanh nghiệp ở trần 49%.
+- **Hàng rào 0%:** theo dõi riêng các mã có room dưới 10% và dưới 1% (Ưu tiên 3) để can thiệp trước khi room cạn hẳn.
+
+```{r pol1_tab, error=TRUE}
+knitr::kable(pol1 %>% arrange(buoc, desc(usd)) %>%
+  transmute(`Bước` = buoc, `Mã` = t, `Headroom 30/6 (%)` = 100 * hr6, `Headroom 19/11 (%)` = 100 * room / fol,
+            `Trần hiện tại (%)` = 100 * fol, `Trần luật định (%)` = 100 * tran_luat,
+            `Cần nâng trần (điểm)` = 100 * need, `Vốn thụ động (triệu US$)` = usd),
+  digits = 1, caption = "Bảng 10.3: Lộ trình theo mã cho Ưu tiên 1 (trần luật định: 30% với ngân hàng, 49% với doanh nghiệp khác; MBB có thể tới 49% theo Nghị định 69/2025)")
+```
+
+```{r pol1_fig, error=TRUE, fig.height=3.2, fig.cap="Hình 10.2: Vốn thụ động thu về cộng dồn theo ba bước của Ưu tiên 1 (triệu US\\$). Đường đứt: phần không cần sửa luật"}
+lab_b <- c("Bước 0" = "Bước 0: giữ nguyên", "Bước 1" = "Bước 1: doanh nghiệp tự nâng trần",
+           "Bước 2" = "Bước 2: cần đổi khung trần")
+colb  <- c("Bước 0" = unname(COL["ff"]), "Bước 1" = unname(COL["liq"]), "Bước 2" = unname(COL["room"]))
+wf  <- pol1 %>% arrange(buoc, desc(usd)) %>%
+  mutate(x1 = cumsum(usd), x0 = x1 - usd, y = match(buoc, names(lab_b)))
+wfs <- wf %>% group_by(buoc, y) %>% summarise(x1 = max(x1), v = sum(usd), .groups = "drop")
+nolaw <- sum(wf$usd[wf$buoc != "Bước 2"])
+ggplot(wf) +
+  geom_rect(aes(xmin = x0, xmax = x1, ymin = y - 0.35, ymax = y + 0.35, fill = buoc), colour = "white", linewidth = 0.6) +
+  geom_text(data = filter(wf, usd >= 15), aes(x = (x0 + x1) / 2, y = y, label = t), colour = "white", size = 3, fontface = "bold") +
+  geom_text(data = wfs, aes(x = x1, y = y, label = paste0("+", f1(v, 0))), hjust = -0.25, size = 3.3) +
+  annotate("rect", xmin = 0, xmax = sum(wf$usd), ymin = 3.65, ymax = 4.35, fill = unname(COL["ink"])) +
+  annotate("text", x = sum(wf$usd), y = 4, label = f1(sum(wf$usd), 0), hjust = -0.25, size = 3.3, fontface = "bold") +
+  geom_vline(xintercept = nolaw, linetype = "dashed", colour = "grey40") +
+  annotate("text", x = nolaw, y = 0.45, label = paste0("không cần sửa luật: ", pc(nolaw / sum(wf$usd), 0)),
+           hjust = 1.05, size = 3.1, colour = "grey30") +
+  scale_fill_manual(values = colb, breaks = names(lab_b), labels = unname(lab_b)) +
+  scale_y_continuous(breaks = 1:4, labels = c("Bước 0", "Bước 1", "Bước 2", "Cộng dồn"), trans = "reverse") +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.1))) +
+  labs(x = "Vốn thụ động ước tính thu về, cộng dồn (triệu US$)", y = NULL)
+```
+
+```{r pol1_cliff, error=TRUE, fig.height=3.2, fig.cap="Hình 10.3: Hệ số Tight theo ngưỡng định nghĩa room cạn, kèm khoảng tin cậy 95% (điểm %, từ Bảng 6.6)"}
+cl_tab <- tibble(nguong = factor(c("Dưới 15%", "Dưới 10%", "Dưới 5%", "Dưới 1%"),
+                                 levels = c("Dưới 15%", "Dưới 10%", "Dưới 5%", "Dưới 1%")),
+                 b = 100 * rob_tab[[2]][c(4, 1, 3, 5)], se = 100 * rob_tab[[3]][c(4, 1, 3, 5)])
+ggplot(cl_tab, aes(nguong, b)) +
+  geom_hline(yintercept = 0, colour = "grey50") +
+  geom_errorbar(aes(ymin = b - 1.96 * se, ymax = b + 1.96 * se), width = 0.12, colour = unname(COL["room"])) +
+  geom_line(aes(group = 1), colour = unname(COL["room"]), linewidth = 1) +
+  geom_point(size = 3, colour = unname(COL["room"])) +
+  geom_text(aes(label = f1(b)), nudge_x = 0.2, size = 3.4) +
+  labs(x = "Ngưỡng định nghĩa room cạn (room còn lại / tổng room)", y = "Hệ số Tight (điểm %)")
+```
+
+**Bằng chứng và lập luận.**
+
+1. *Room cạn gắn với chuyển dịch sang thỏa thuận, và tác động mạnh dần khi room tiến về 0.* Hệ số Tight tăng từ `r iv(f1(cl_tab$b[1]))` điểm ở ngưỡng 15% lên `r iv(f1(cl_tab$b[4]))` điểm khi room dưới 1% (Hình 10.3); kết quả giữ dấu và ý nghĩa qua `r nrow(rob_tab)` đặc tả (Bảng 6.6) và trong cùng một mã (H4). Đây là căn cứ để ưu tiên các mã đang sát 0% room, thay vì nới đồng loạt.
+2. *Room quyết định mã có vào rổ hay không, và đây là kênh mất nhiều vốn nhất.* Các mã ở Bảng 10.3 tương ứng khoảng `r iv(f1(lost_usd, 0))` triệu US\$ (Hình 10.1).
+3. *Phần lớn số vốn này lấy lại được với chi phí thấp.* Bước 0 và Bước 1 thu về `r iv(f1(nolaw, 0))` triệu US\$, tức `r iv(pc(share_nolaw, 0))` tổng số, với tổng mức nâng trần `r iv(f1(100 * sum(pol1$need[pol1$buoc != "Bước 2"])))` điểm phần trăm và không cần sửa luật (Hình 10.2).
+4. *Ở kênh hấp thụ, nút thắt cũng tập trung ở vài mã.* Ở US\$1,5 tỷ, `r top_t` chiếm `r pc(top_share, 0)` phần bỏ lỡ; bỏ riêng mã này, độ phủ lên `r iv(f1(sens_tab[[3]][3]))`% (Bảng 7.6). Nới room +5 điểm đưa độ phủ lên `r pc(lev_cov[1])` và vẫn là đòn bẩy đơn lẻ mạnh nhất ở US\$6 tỷ (Bảng 7.4).
+
+**Điều kiện.** Ước lượng vốn thu về là bậc một, phân bổ theo vốn hóa nhân min(free float, trần sở hữu) so với rổ 27 mã; số tiền thật phụ thuộc trọng số FTSE và thời điểm mã được đưa vào. FTSE giải ngân theo bốn đợt (10%, 20%, 35%, 35%, đến 9/2027), nên mã được đưa vào ở các đợt sau vẫn nhận phần lớn tỷ trọng còn lại.
+
+## Ưu tiên 2: giữ lộ trình giải ngân nhiều đợt và chuẩn bị thanh khoản cho kịch bản vốn lớn
+
+**Khuyến nghị.**
+
+- Bộ Tài chính và UBCKNN phối hợp với FTSE giữ lộ trình giải ngân bốn đợt đến tháng 9/2027, không dồn giải ngân trong thời gian ngắn.
+- HOSE lập danh sách theo dõi các mã có giá trị giao dịch khớp lệnh thấp so với tỷ trọng trong chỉ số; đây là nhóm sẽ nghẽn đầu tiên khi vốn lớn hơn.
+- Tăng thanh khoản cho nhóm này qua tạo lập thị trường và cơ chế đối tác bù trừ trung tâm (đã có cơ sở pháp lý tại Nghị định 245/2025/NĐ-CP).
+
+```{r pol2_fig, error=TRUE, fig.height=3.4, fig.cap="Hình 10.4: Độ phủ theo số phiên giải ngân H, với ba mức tỷ lệ tham gia p, kịch bản US\\$1,5 tỷ (từ Hình 7.3)"}
+gp <- grid %>% filter(p %in% c(5, 10, 20)) %>%
+  mutate(pl = factor(paste0("p = ", p, "%"), levels = paste0("p = ", c(5, 10, 20), "%")))
+ggplot(gp, aes(H, 100 * c, colour = pl)) + geom_line(linewidth = 1) + geom_point(size = 2.2) +
+  geom_text(data = filter(gp, H == 20), aes(label = f1(100 * c, 0)), hjust = 1.5, size = 3.3, show.legend = FALSE) +
+  annotate("text", x = 250, y = 100 * grid$c[grid$H == 250 & grid$p == 10] + 5, label = "thiết lập cơ sở", size = 3.2) +
+  scale_x_log10(breaks = c(20, 60, 120, 250, 500), expand = expansion(mult = c(0.1, 0.05))) +
+  scale_colour_manual(values = c("#90cdf4", unname(COL["liq"]), "#1a365d")) +
+  coord_cartesian(ylim = c(20, 105)) +
+  labs(x = "H, số phiên giải ngân (thang log)", y = "Độ phủ (%)")
+```
+
+```{r pol2_lev, error=TRUE, fig.height=2.8, fig.cap="Hình 10.5: Vốn thu thêm khi dùng từng đòn bẩy ở kịch bản US\\$6 tỷ (triệu US\\$, từ Bảng 7.4)"}
+lev6 <- tibble(lv = c("Nới room +5 điểm %", "Tăng thanh khoản +20%", "Tăng free float +10 điểm %", "Cả ba đòn bẩy"),
+               diem = c(st6[[4]], st6[[6]], st6[[5]], st6[[7]] - st6[[3]])) %>% mutate(usd = diem * 60)
+ggplot(lev6, aes(usd, reorder(lv, usd), fill = lv)) + geom_col(width = 0.6) +
+  geom_text(aes(label = paste0(f1(usd, 0), " (+", f1(diem), " điểm)")), hjust = -0.1, size = 3.3) +
+  scale_fill_manual(values = c("Nới room +5 điểm %" = unname(COL["room"]), "Tăng thanh khoản +20%" = unname(COL["liq"]),
+                               "Tăng free float +10 điểm %" = unname(COL["ff"]), "Cả ba đòn bẩy" = unname(COL["ink"])),
+                    guide = "none") +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.35))) +
+  labs(x = "Vốn thu thêm (triệu US$)", y = NULL)
+```
+
+**Bằng chứng và lập luận.**
+
+1. *Thời gian giải ngân là đòn bẩy mạnh nhất của nhóm này.* Ở p = 10%, kéo dài từ 20 lên 250 phiên nâng độ phủ từ `r iv(f1(100 * grid$c[grid$H == 20 & grid$p == 10], 0))`% lên `r iv(f1(100 * grid$c[grid$H == 250 & grid$p == 10], 0))`% (Hình 10.4), lớn hơn tác động của bất kỳ đòn bẩy room hay thanh khoản nào ở Bảng 7.3.
+2. *Thanh khoản chỉ trở thành nút thắt thực sự khi vốn lớn.* Ở US\$1,5 tỷ, tăng thanh khoản 20% thêm `r iv(f1(st15[[6]]))` điểm độ phủ cho rổ 100 mã; ở US\$6 tỷ, `r sum(b6$gap > 1e-6 & b6$bind == "Thanh khoản")` mã thiếu dư địa vì thanh khoản, riêng `r top6_t` chiếm `r pc(top6_share, 0)` phần bỏ lỡ, và tăng thanh khoản 20% thu thêm khoảng `r iv(f1(st6[[6]] * 60, 0))` triệu US\$ (Hình 10.5).
+3. *Ngay cả khi dùng cả ba đòn bẩy, độ phủ ở US\$6 tỷ chỉ đạt `r pc(cov6_all)`.* Phần còn lại phụ thuộc vào lộ trình giải ngân, nên giữ lộ trình nhiều đợt là điều kiện cần.
+
+**Điều kiện.** Đây là ưu tiên mang tính chuẩn bị: nó trở thành then chốt khi dòng vốn chủ động hoặc một đợt nâng hạng khác (như MSCI) làm tổng vốn vượt xa US\$1,5 tỷ. Các tham số H, p và độ co giãn ε là giả định của nhóm (Mục 3.3 và Mục 7.5).
+
+## Ưu tiên 3: công bố tỷ trọng thỏa thuận theo mã làm chỉ báo cảnh báo sớm
+
+**Khuyến nghị.**
+
+- UBCKNN và các sở giao dịch công bố hàng tháng giá trị và giá giao dịch thỏa thuận của khối ngoại theo từng mã.
+- Áp dụng quy tắc cảnh báo hai mức: mức vàng khi room còn dưới 10% tổng room, mức đỏ khi dưới 1%. Mã ở mức đỏ được đưa vào danh sách của Ưu tiên 1.
+- Dashboard của nhóm là bản mẫu của chỉ báo này và có thể cập nhật mỗi tháng từ cùng nguồn FiinQuantX.
+
+```{r pol3_fig, error=TRUE, fig.height=3.2, fig.cap="Hình 10.6: Tỷ trọng thỏa thuận gộp (Bảng 5.2) và xác suất dự báo tháng do thỏa thuận chi phối (Bảng 6.4) theo nhóm room"}
+p3 <- tibble(nhom = rep(as.character(bk[[1]]), 2),
+             chi_so = rep(c("Tỷ trọng thỏa thuận gộp theo giá trị", "Xác suất dự báo tháng thỏa thuận ≥ 50% (Logit)"), each = 3),
+             v = c(bk[[4]], 100 * pr_b)) %>%
+  mutate(nhom = factor(nhom, levels = as.character(bk[[1]])))
+ggplot(p3, aes(nhom, v, fill = chi_so)) +
+  geom_col(position = position_dodge(width = 0.75), width = 0.7) +
+  geom_text(aes(label = paste0(f1(v), "%")), position = position_dodge(width = 0.75), vjust = -0.4, size = 3.2) +
+  scale_fill_manual(values = c(unname(COL["room"]), unname(COL["gray"]))) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.12))) +
+  labs(x = "Room còn lại / tổng room", y = "%")
+```
+
+**Bằng chứng và lập luận.**
+
+1. *Tín hiệu có độ phân biệt cao.* Ở nhóm room dưới 10%, xác suất một tháng bị thỏa thuận chi phối là `r iv(pc(pr_b[1]))`, gấp `r iv(f1(pr_b[1] / pr_b[3]))` lần nhóm room rộng (`r iv(pc(pr_b[3]))`); tỷ số chênh `r iv(f1(exp(ct[2, 1]), 2))` (KTC 95%: `r iv(f1(exp(ct[2, 1] - 1.96 * ct[2, 2]), 2))` đến `r iv(f1(exp(ct[2, 1] + 1.96 * ct[2, 2]), 2))`) và AUC `r iv(f1(auc, 2))` (Bảng 6.4, Hình 10.6).
+2. *Tín hiệu phản ứng nhanh với thay đổi room.* Ca TCB (Hình 5.4) cho thấy khi room từ 0 nhích lên vài phần trăm, tỷ trọng thỏa thuận rơi gần về 0.
+3. *Chi phí thấp nhất.* Dữ liệu đã có sẵn trong hệ thống sở giao dịch; công bố chỉ báo không cần thay đổi pháp lý.
+
+**Điều kiện.** Tỷ trọng thỏa thuận cao cũng có thể do giao dịch khối lớn không liên quan đến room (ví dụ tháng 10), nên chỉ báo dùng để sàng lọc, không thay cho đánh giá từng trường hợp.
+
+## Ranh giới: điều chính sách room không làm được
+
+```{r pol_bound, error=TRUE, fig.height=2.6, fig.cap="Hình 10.7: Quy mô dòng bán ròng năm 2026 so với vốn FTSE (nghìn tỷ đồng)"}
+bd <- tibble(dv = c("Khối ngoại bán ròng trên HOSE, 01/01 đến 19/11/2026", "Vốn thụ động FTSE (US$1,5 tỷ)",
+                    "Ước tính FTSE gồm cả quỹ chủ động (US$6 tỷ)"),
+             v = c(-ytd_net / 1000, 1.5 * 25.65, 6 * 25.65), loai = c("Bán ròng", "Vốn FTSE", "Vốn FTSE")) %>%
+  mutate(dv = factor(dv, levels = rev(dv)))
+ggplot(bd, aes(v, dv, fill = loai)) + geom_col(width = 0.6) +
+  geom_text(aes(label = f1(v)), hjust = -0.2, size = 3.4) +
+  scale_fill_manual(values = c("Bán ròng" = unname(COL["gray"]), "Vốn FTSE" = unname(COL["liq"])), guide = "none") +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.12))) + labs(x = "Nghìn tỷ đồng", y = NULL)
+```
+
+Hai kết quả đặt ranh giới cho các khuyến nghị trên:
+
+- **Nới room dàn trải không có tác dụng.** Nhóm room 10% đến 30% không khác biệt có ý nghĩa với nhóm room rộng (H3: `r sumh[[3]][3]`), và ở US\$1,5 tỷ chỉ `r short_n(b0)` trên `r nrow(b0)` mã trong rổ thiếu dư địa. Nới room cho các mã còn lại tốn công mà không thu thêm vốn.
+- **Nới room không đảo chiều dòng bán ròng.** Room không giải thích được mức bán ròng giữa các mã (H6: `r sumh[[3]][6]`), và dòng bán năm 2026 gấp `r iv(f1(-ytd_net / 1000 / (1.5 * 25.65)))` lần toàn bộ vốn thụ động FTSE (Hình 10.7). Cơ quan quản lý cần đặt kỳ vọng đúng: nới room giúp vốn vào được khi nó đến, nhưng không tự tạo ra dòng vốn; nguyên nhân bán ròng cần tìm ở định giá, tỷ giá và dòng quỹ toàn cầu, nằm ngoài phạm vi bài này.
+
+## Lộ trình thực hiện và chỉ báo theo dõi
+
+```{r pol_road, error=TRUE}
+road <- tibble(
+  `Mốc` = c("Trước kỳ rà soát 3/2027 (đợt 2, cộng dồn 30%)", "Mùa đại hội cổ đông 2027, trước kỳ 6/2027 và 9/2027 (70% tỷ trọng còn lại)",
+            "Từ năm 2027", "Hàng tháng"),
+  `Việc cần làm` = c(
+    paste0("Bước 0: ", paste(pol1$t[pol1$buoc == "Bước 0"], collapse = ", "), " giữ headroom ≥ 20%. Bắt đầu công bố chỉ báo của Ưu tiên 3."),
+    paste0("Bước 1: ", paste(pol1$t[pol1$buoc == "Bước 1"], collapse = ", "), " thông qua nâng trần sở hữu nước ngoài. Giữ lộ trình bốn đợt (Ưu tiên 2)."),
+    paste0("Bước 2: rà soát khung trần cho ", paste(pol1$t[pol1$buoc == "Bước 2"], collapse = ", "), ". Chuẩn bị thanh khoản cho kịch bản US\\$6 tỷ."),
+    "Cập nhật room, tỷ trọng thỏa thuận và độ phủ mô phỏng."),
+  `Chủ thể` = c("Doanh nghiệp, UBCKNN, sở giao dịch", "Đại hội đồng cổ đông, NHNN, Bộ Tài chính",
+                "Chính phủ, NHNN, Bộ Tài chính, HOSE", "UBCKNN, nhóm nghiên cứu"),
+  `Hoàn thành khi` = c("Các mã Bước 0 được FTSE xét lại", "Các mã Bước 1 đạt headroom ≥ 20%",
+                       "Có quyết định về khung trần", "Có báo cáo tháng"))
+knitr::kable(road, caption = "Bảng 10.4: Lộ trình thực hiện theo các đợt giải ngân của FTSE")
+
+kpi <- tibble(
+  `Chỉ báo` = c("Vốn thụ động mất do headroom dưới 20% (triệu US\\$)", "Số mã rổ 100 thiếu dư địa vì room, US\\$1,5 tỷ",
+                "Độ phủ mô phỏng, US\\$1,5 tỷ", "Độ phủ mô phỏng, US\\$6 tỷ", "Tỷ trọng thỏa thuận gộp, nhóm room dưới 10%"),
+  `Hiện tại (19/11/2026)` = c(f1(lost_usd, 0), sum(b0$gap > 1e-6 & b0$bind == "Room"), pc(cov0), pc(cov6), paste0(f1(bk[[4]][1]), "%")),
+  `Mục tiêu` = c(paste0("≤ ", f1(sum(pol1$usd[pol1$buoc == "Bước 2"]), 0), " sau Bước 0 và Bước 1"), "0",
+                 paste0(pc(lev_cov[1]), " (nới room +5 điểm)"), paste0("≥ ", pc(cov6_all), " (cả ba đòn bẩy)"),
+                 paste0("Tiến về ", f1(bk[[4]][3]), "% (mức nhóm room rộng)")),
+  `Ưu tiên` = c("1", "1", "1", "2", "3"))
+knitr::kable(kpi, caption = "Bảng 10.5: Chỉ báo theo dõi, giá trị hiện tại và mục tiêu mà mô phỏng cho thấy đạt được")
+```
+
+# Hạn chế và hướng phát triển tiếp theo
 
 ## Hạn chế của nghiên cứu
 
-Thứ nhất, các ước lượng là quan hệ thống kê có điều kiện. Room có thể nội sinh: một mã hết room vì được khối ngoại ưa chuộng, và chính sự ưa chuộng đó có thể đi kèm các giao dịch khối lớn. Mô hình hiệu ứng cố định giảm nhưng không loại hết nguy cơ này. Thứ hai, chuỗi thời gian chỉ có 11 tháng, không đủ để kiểm định chặt sự thay đổi trước và sau ngày FTSE hiệu lực. Thứ ba, free float của nhà cung cấp có thể đã gồm phần khối ngoại đang nắm, cửa sổ tính GTGD bình quân do nhà cung cấp quyết định, và một số mã có room bằng 0 cần được đối chiếu với trần sở hữu thực tế. Thứ tư, nhu cầu trong mô phỏng được phân bổ theo free float chứ không theo trọng số thật của FTSE (Mục 7.3 so sánh với rổ 27 mã thật), tổng vốn thụ động là ước tính, và p, H, ε là giả định của nhóm. Thứ năm, cửa sổ tính giá trị giao dịch khớp lệnh bình quân do nhà cung cấp quyết định (khoảng 20 đến 30 phiên).
+Thứ nhất, các ước lượng là quan hệ thống kê có điều kiện. Room có thể nội sinh: một mã hết room vì được khối ngoại ưa chuộng, và chính sự ưa chuộng đó có thể đi kèm các giao dịch khối lớn. Mô hình hiệu ứng cố định giảm nhưng không loại hết nguy cơ này. Thứ hai, chuỗi thời gian chỉ có 11 tháng, không đủ để kiểm định chặt sự thay đổi trước và sau ngày FTSE hiệu lực. Thứ ba, free float của nhà cung cấp có thể đã gồm phần khối ngoại đang nắm, và một số mã có room bằng 0 cần được đối chiếu với trần sở hữu thực tế. Thứ tư, nhu cầu trong mô phỏng được phân bổ theo free float chứ không theo trọng số thật của FTSE (Mục 7.3 so sánh với rổ 27 mã thật), tổng vốn thụ động là ước tính, và p, H, ε là giả định của nhóm. Thứ năm, cửa sổ tính giá trị giao dịch khớp lệnh bình quân do nhà cung cấp quyết định (khoảng 20 đến 30 phiên).
 
 ## Hướng phát triển tiếp theo
 
-Hai hướng mở rộng tự nhiên là: (1) dùng dữ liệu ngày và nghiên cứu sự kiện (event study) quanh từng đợt giải ngân của FTSE, so sánh mã thuộc và không thuộc danh mục chỉ số theo thiết kế sai biệt kép; (2) bổ sung dữ liệu giá giao dịch thỏa thuận để ước lượng trực tiếp phần bù room, qua đó lượng hóa chi phí mà giới hạn sở hữu áp lên nhà đầu tư nước ngoài.
+Thứ tự các hướng phát triển dựa trên kết quả độ nhạy ở Bảng 7.6: giả định nào làm độ phủ dịch chuyển nhiều nhất thì cần được thay bằng dữ liệu thật trước.
+
+```{r next_fig, error=TRUE, fig.height=3.2, fig.cap="Hình 11.1: Độ phủ dịch chuyển bao nhiêu điểm phần trăm so với thiết lập cơ sở khi đổi từng giả định (từ Bảng 7.6)"}
+sd_tab <- sens_tab %>% filter(!grepl("ε|Cơ sở", `Kịch bản`)) %>%
+  mutate(d = `Độ phủ (%)` - sens_tab[[3]][1], kb = gsub("\\\\", "", `Kịch bản`))
+ggplot(sd_tab, aes(d, reorder(kb, abs(d)), fill = d < 0)) + geom_col(width = 0.6) +
+  geom_vline(xintercept = 0, colour = "grey40") +
+  geom_text(aes(label = f1(d), hjust = ifelse(d < 0, 1.15, -0.15)), size = 3.3) +
+  scale_fill_manual(values = c("TRUE" = unname(COL["room"]), "FALSE" = unname(COL["liq"])), guide = "none") +
+  scale_x_continuous(expand = expansion(mult = 0.15)) +
+  labs(x = "Thay đổi độ phủ so với cơ sở (điểm %)", y = NULL)
+```
+
+Hai giả định quan trọng nhất là **quy mô vốn** (độ phủ giảm `r iv(f1(sens_tab[[3]][1] - sens_tab[[3]][2]))` điểm ở US\$6 tỷ) và **cách tính nhu cầu** (giảm `r iv(f1(sens_tab[[3]][1] - sens_tab[[3]][5]))` điểm khi trừ sở hữu ngoại khỏi free float). Kích thước rổ và đợt giải ngân gần như không đổi kết quả, nên kết luận chính về vai trò của room là bền.
+
+```{r next_tab, error=TRUE}
+nxt <- tibble(
+  `Thứ tự` = 1:6,
+  `Giới hạn hiện tại` = c(
+    paste0("Nhu cầu phân bổ theo free float, chưa trừ sở hữu ngoại (−", f1(sens_tab[[3]][1] - sens_tab[[3]][5]), " điểm)"),
+    paste0("Quy mô vốn bất định (−", f1(sens_tab[[3]][1] - sens_tab[[3]][2]), " điểm ở US\\$6 tỷ)"),
+    paste0("Chưa phải quan hệ nhân quả; hiệu ứng cố định mã dựa vào ", length(sw), " mã đổi trạng thái"),
+    "Chưa có giá giao dịch thỏa thuận",
+    "Sau ngày hiệu lực mới có 2 tháng, tháng 11 chưa trọn",
+    "Dashboard cần dán dữ liệu thủ công cho chế độ mô phỏng trực tiếp"),
+  `Hướng tiếp theo` = c(
+    "Dùng trọng số đầu tư được (investability weight) thật của FTSE cho 27 mã, trừ sở hữu ngoại hiện hữu",
+    "Mô phỏng theo lịch 10/20/35/35% và các kịch bản thêm quỹ chủ động, nâng hạng MSCI",
+    "Nghiên cứu sự kiện và sai biệt kép quanh các lần đổi trần room; yêu cầu công bố trần trong 12 tháng của Nghị định 245/2025 tạo thêm nhiều mã đổi trạng thái",
+    "Thu thập giá thỏa thuận, so với giá khớp lệnh cùng ngày",
+    "Chạy lại kiểm định dấu và kiểm định gãy cấu trúc sau đợt giải ngân 3/2027",
+    "Nhúng dữ liệu mã vào sản phẩm, tự cập nhật hàng tháng; mở rộng sang HNX và UPCoM"),
+  `Kết quả kỳ vọng` = c(
+    paste0("Độ phủ chính xác trong khoảng ", f1(sens_tab[[3]][5]), "% đến ", pc(cov0)),
+    "Biết đợt nào, mã nào nghẽn trước",
+    "Ước lượng tác động nhân quả của nới room",
+    "Đo phần bù room bằng tiền, lượng hóa chi phí của room cạn",
+    "Biết nâng hạng có làm đổi xu hướng dòng vốn hay không",
+    "Công cụ giám sát dùng được ngay cho cơ quan quản lý"))
+knitr::kable(nxt, caption = "Bảng 11.1: Sáu hướng phát triển tiếp theo, mỗi hướng gắn với một giới hạn hiện tại")
+```
 
 # Tài liệu tham khảo
 
@@ -962,6 +1252,14 @@ Bailey, W., Chung, Y. P., & Kang, J.-K. (1999). Foreign ownership restrictions a
 Bailey, W., & Jagtiani, J. (1994). Foreign ownership restrictions and stock prices in the Thai capital market. *Journal of Financial Economics*, 36(1), 57–87.
 
 Cameron, A. C., & Miller, D. L. (2015). A practitioner's guide to cluster-robust inference. *Journal of Human Resources*, 50(2), 317–372.
+
+Chính phủ. (2014). *Nghị định số 01/2014/NĐ-CP về việc nhà đầu tư nước ngoài mua cổ phần của tổ chức tín dụng Việt Nam*.
+
+Chính phủ. (2025a). *Nghị định số 69/2025/NĐ-CP sửa đổi, bổ sung một số điều của Nghị định số 01/2014/NĐ-CP*.
+
+Chính phủ. (2025b). *Nghị định số 245/2025/NĐ-CP sửa đổi, bổ sung một số điều của Nghị định số 155/2020/NĐ-CP quy định chi tiết thi hành một số điều của Luật Chứng khoán*.
+
+FTSE Russell. (2025). *Reclassification of Vietnam from Frontier to Secondary Emerging Market Status: Frequently Asked Questions* (v1.0, tháng 11/2025; bản v1.3, 25/8/2026). LSEG.
 
 Froot, K. A., O'Connell, P. G. J., & Seasholes, M. S. (2001). The portfolio flows of international investors. *Journal of Financial Economics*, 59(2), 151–193.
 

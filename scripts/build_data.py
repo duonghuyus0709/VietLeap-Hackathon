@@ -1,7 +1,7 @@
 """scripts/build_data.py
-Ghép dữ liệu FiinQuantX thô trong src/data/raw thành src/data/processed/data.json cho dashboard.
+Ghép dữ liệu FiinQuantX thô trong data/raw thành data/processed/data.json cho dashboard.
 
-Đầu vào (phản hồi JSON nguyên bản từ FiinQuant MCP, ngày dữ liệu 19/11/2026, nằm trong src/data/raw):
+Đầu vào (phản hồi JSON nguyên bản từ FiinQuant MCP, ngày dữ liệu 19/11/2026, nằm trong data/raw):
   screener400.json  : screen_stocks (vốn hóa, room còn lại, sở hữu ngoại, GTGD bình quân) cho 400 mã vốn hóa lớn nhất
   snap400.json      : get_equity_snapshot (free_float_ratio, outstanding_shares, avg_matched_value)
   ff_1.json, ff_2.json, ff_3a.json : get_market_statistics(metric='foreign_flow', Monthly) cho 124 mã lớn nhất
@@ -19,8 +19,8 @@ from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-RAW = ROOT / 'src' / 'data' / 'raw'
-OUT = ROOT / 'src' / 'data' / 'processed' / 'data.json'
+RAW = ROOT / 'data' / 'raw'
+OUT = ROOT / 'data' / 'processed' / 'data.json'
 TY = 1e9  # VND -> tỷ đồng
 
 def load(name):

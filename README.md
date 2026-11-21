@@ -2,68 +2,61 @@
 
 Dashboard tương tác trả lời câu hỏi: vì sao khối ngoại vẫn bán ròng dù Việt Nam được FTSE Russell nâng hạng, dòng vốn nghẽn ở đâu và nên nới đòn bẩy chính sách nào trước.
 
-Người ra quyết định: Ủy ban Chứng khoán Nhà nước, Bộ Tài chính. Giao diện bám phong cách hai dashboard mẫu trong handout của cuộc thi (Vietnam Land Brief và Viet Nam PFM benchmark): nền trắng, không có chế độ tối, bốn panel chuyển bằng tab, mỗi panel mở đầu bằng đoạn dẫn có số in đậm, mỗi biểu đồ có dòng "Cách đọc", nguồn ở cuối panel.
+Người ra quyết định: Ủy ban Chứng khoán Nhà nước, Bộ Tài chính. Giao diện bám phong cách hai dashboard mẫu trong handout của cuộc thi (Vietnam Land Brief và Viet Nam PFM benchmark): nền trắng, không có chế độ tối, năm panel chuyển bằng tab, mỗi panel mở đầu bằng đoạn dẫn có số in đậm, mỗi biểu đồ có dòng "Cách đọc", nguồn ở cuối panel.
 
 ## Mở sản phẩm
 Mở file `index.html` bằng trình duyệt. File tự chứa toàn bộ dữ liệu và mã. Chỉ phông chữ IBM Plex tải từ Google Fonts, nếu không có mạng trang vẫn chạy với phông thay thế.
 
 Để có đường link cho giám khảo, kéo thả thư mục này lên Netlify Drop hoặc đưa lên GitHub Pages. Trang chính là `index.html`.
 
-## Bốn panel
-Bố cục theo khung "From data to decision" của giám khảo (một màn hình cho mỗi câu trả lời; mức, so sánh, xu hướng, quyết định; câu khuyến nghị ở đầu trang). Một dải khuyến nghị cố định ở đầu mọi panel.
-1. Nghịch lý: câu dẫn có số, bốn ô số (mức, so với gì, xu hướng, kênh), ròng khối ngoại HOSE theo tháng, mã bán và mua nhiều nhất.
-2. Điểm nghẽn: tỷ trọng thỏa thuận theo ba nhóm room, hệ số theo ngưỡng, biểu đồ phân tán 1.169 quan sát, xếp hạng headroom ngày 30/6 so với ngưỡng FTSE 20%. Bên dưới: 14 đặc tả kiểm định, ca TCB, Logit, 8 mã bị FTSE loại.
-3. Quyết định: sơ đồ ba cửa của dòng vốn thụ động (vào rổ FTSE, còn room, đủ thanh khoản), bốn kịch bản (US$1,5 / 2,2 / 6 tỷ, rổ 27 mã FTSE), ba thanh trượt đòn bẩy, xếp hạng đòn bẩy và danh sách hành động theo mã. Bên dưới: bảng kịch bản, bản đồ nhiệt H và p, nút thắt.
-4. Tra cứu: từng mã (R, F, L, dòng vốn theo tháng), bảng đầy đủ tải CSV, bảy giả thuyết H1 đến H7, phương pháp và giới hạn.
-
-Khi thuyết trình: phím 1 đến 4 chuyển panel, phím P bật chế độ trình chiếu (ẩn phần chi tiết, chữ lớn hơn).
+## Dashboard: ba ưu tiên chính sách
+Một trang, dựng từ Mục 10 (Hàm ý chính sách) của `analysis/nghich_ly_nang_hang (1).Rmd`. Mỗi ưu tiên chỉ gồm biểu đồ và một ô "Cần làm" rút ra từ biểu đồ. Biểu đồ: ApexCharts 8.9.1 (Community License), nhúng sẵn trong `index.html`.
+- Bối cảnh: bán ròng so với vốn FTSE; vốn bị chặn theo kênh (loại mã, hấp thụ); thẻ tóm tắt ba ưu tiên.
+- Ưu tiên 1, nới room có mục tiêu: bậc thang cộng dồn ba bước (Bước 0 và 1 lấy lại 61% vốn không cần sửa luật); trần cần có so với trần luật định theo mã; hệ số room cạn theo ngưỡng kèm dải tin cậy; tác động của từng đòn bẩy ở US$1,5 và 6 tỷ.
+- Ưu tiên 2, lộ trình và thanh khoản: độ phủ theo tổng vốn (ngưỡng khoảng US$1,7 tỷ); độ phủ theo số phiên giải ngân H.
+- Ưu tiên 3, cảnh báo sớm: heatmap đèn đỏ, vàng của room theo mã và tháng; tỷ trọng thỏa thuận và xác suất Logit theo nhóm room.
+- Lộ trình: biểu đồ Gantt theo bốn đợt giải ngân FTSE, và hai ranh giới (không nới đồng loạt, không kỳ vọng nới room tự đảo chiều dòng bán).
 
 ## Cấu trúc
 ```
 .
-├── index.html                  # sản phẩm hoàn chỉnh, dữ liệu đã nhúng (file build, để ở gốc cho GitHub Pages / Netlify)
+├── index.html                  # SẢN PHẨM: dashboard tự chứa (dữ liệu + ApexCharts nhúng sẵn), mở trực tiếp hoặc qua GitHub Pages
 ├── README.md
-├── src/
-│   ├── dashboard.src.html      # mã nguồn giao diện và mô hình tính toán (HTML, CSS, JavaScript thuần, SVG tự vẽ)
-│   └── data/
-│       ├── raw/                # phản hồi JSON nguyên bản từ FiinQuant MCP, ngày dữ liệu 19/11/2026
-│       │   ├── screener400.json    # screen_stocks: vốn hóa, room còn lại, sở hữu ngoại, GTGD bình quân, 400 mã vốn hóa lớn nhất
-│       │   ├── snap400.json        # get_equity_snapshot: free_float_ratio, outstanding_shares, avg_matched_value
-│       │   ├── ff_1.json, ff_2.json, ff_3a.json  # get_market_statistics(foreign_flow, Monthly), 124 mã lớn nhất
-│       │   ├── vnindex_ff.json     # get_market_statistics(['VNINDEX'], foreign_flow, Monthly), sàn HOSE
-│       │   └── hnx_upcom_ff_net.json  # ròng khối ngoại theo tháng của HNXINDEX và UPCOMINDEX, để cộng ra cả ba sàn
-│       └── processed/
-│           └── data.json       # dữ liệu đã hợp nhất cho dashboard
-├── analysis/
-│   ├── nghich_ly_nang_hang.Rmd # báo cáo kinh tế lượng (R Markdown), đọc src/data/csv, render ra docs/nghich_ly_nang_hang.html
-│   └── nghich_ly_nang_hang.R   # toàn bộ mã R tách từ file .Rmd (knitr::purl), chạy độc lập bằng Rscript
+├── VietLeap.Rproj              # dự án RStudio
+├── dashboard/                  # mã nguồn dashboard
+│   ├── dashboard.src.html      # giao diện và mô hình tính toán (HTML, CSS, JavaScript)
+│   └── vendor/                 # apexcharts.min.js 8.9.1 và giấy phép Community
+├── analysis/                   # báo cáo kinh tế lượng
+│   ├── nghich_ly_nang_hang.Rmd # R Markdown đầy đủ, gồm Mục 10 Hàm ý chính sách
+│   └── nghich_ly_nang_hang.R   # toàn bộ mã R, tách từ .Rmd bằng knitr::purl
+├── data/
+│   ├── raw/                    # phản hồi JSON nguyên bản từ FiinQuant MCP, chốt 19/11/2026
+│   ├── csv/                    # cùng dữ liệu ở dạng CSV, đầu vào của báo cáo R
+│   └── processed/data.json     # dữ liệu đã hợp nhất, đầu vào của dashboard
 ├── scripts/
-│   ├── build_data.py           # src/data/raw → src/data/processed/data.json
-│   ├── stage1_numbers.py       # giai đoạn 1 của prompt: tính và in các con số kiểm trước khi vẽ
-│   └── build_html.py           # nhúng data.json vào src/dashboard.src.html → index.html
+│   ├── build_data.py           # data/raw → data/processed/data.json
+│   ├── json_to_csv.py          # data/raw + data/processed → data/csv
+│   ├── stage1_numbers.py       # in các con số kiểm, so với docs/stage1_numbers.txt
+│   └── build_html.py           # dashboard/ + data.json + ApexCharts → index.html
 └── docs/
-    ├── nghich_ly_nang_hang.html  # báo cáo kinh tế lượng (R), nguồn của panel 03
-    ├── prompt_dashboard.md     # prompt dựng dashboard (sáu phần ROLE, CONTEXT, TASK, DATA, OUTPUT, QUALITY CHECKS, năm giai đoạn)
-    └── stage1_numbers.txt      # kết quả của scripts/stage1_numbers.py để đối chiếu
+    ├── nghich_ly_nang_hang.html  # báo cáo đã render (dashboard liên kết tới đây)
+    ├── nghich_ly_nang_hang.docx  # báo cáo bản Word
+    ├── prompt_dashboard.md       # prompt dựng dashboard (nhật ký dùng AI)
+    └── stage1_numbers.txt        # số kiểm giai đoạn 1 để đối chiếu
 ```
-
-Đơn vị trong `data.json`: giá trị tính bằng tỷ đồng, tỷ lệ là số thập phân. Trong file thô, giá trị tính bằng đồng.
-
-`screener400.json` là 400 mã có vốn hóa lớn nhất, lọc từ toàn bộ 1.541 mã mà `screen_stocks` trả về (bỏ ETF và mã không có vốn hóa). F88 nằm trong top 125 nhưng FiinQuantX không có dữ liệu foreign_flow theo tháng, nên còn 124 mã.
 
 ## Dựng lại
 Chạy từ gốc repo:
 
-    python3 scripts/build_data.py       # src/data/raw → src/data/processed/data.json
+    python3 scripts/build_data.py       # data/raw → data/processed/data.json
+    python3 scripts/json_to_csv.py      # data/raw → data/csv
     python3 scripts/stage1_numbers.py   # in các con số kiểm, so với docs/stage1_numbers.txt
     python3 scripts/build_html.py       # tạo index.html
 
 Báo cáo kinh tế lượng (cần R với rmarkdown, fixest, sandwich, lmtest, car, patchwork):
 
-    python3 scripts/json_to_csv.py      # src/data/raw → src/data/csv
     cd analysis && Rscript -e 'rmarkdown::render("nghich_ly_nang_hang.Rmd", output_dir = "../docs")'
-
-Bảng 4.4 của báo cáo đối chiếu 20 chỉ tiêu tính lại trong R với `docs/stage1_numbers.txt`; cả 20 khớp.
+    Rscript -e 'knitr::purl("nghich_ly_nang_hang.Rmd", output = "nghich_ly_nang_hang.R")'
 
 ## Truy vết các con số chính
 | Số trên trang | Nguồn và công thức |
@@ -107,4 +100,4 @@ Dashboard được dựng với sự hỗ trợ của Claude (Anthropic) theo pr
 - Đếm "mã thiếu dư địa" chỉ tính mã có nhu cầu vượt dư địa; "giới hạn chặt nhất" không còn bị gọi là "bị chặn".
 - Thêm rổ FTSE 27 mã thật và thẻ kiểm chứng headroom 20% ở panel 02.
 - Đổi tên cột "Sau đòn bẩy" thành "Dư địa sau đòn bẩy"; sửa hiển thị trên điện thoại.
-- Đồng bộ báo cáo R với dashboard: báo cáo đọc `src/data/csv`, dùng GTGD khớp lệnh và US$1,5 tỷ; thêm số cả ba sàn, kịch bản US$2,2 / 6 tỷ, rổ FTSE 27 mã và bảng 8 mã bị loại vì headroom (khoảng 237 triệu US$). Thay "124 mã chiếm 89,7%" (mẫu số không cùng phạm vi) bằng "88 mã HOSE chiếm 92,0% ròng HOSE". Các câu về VIC, điểm nóng và kiểm định RESET nay do mã sinh ra thay vì viết cứng.
+- Đồng bộ báo cáo R với dashboard: báo cáo đọc `data/csv`, dùng GTGD khớp lệnh và US$1,5 tỷ; thêm số cả ba sàn, kịch bản US$2,2 / 6 tỷ, rổ FTSE 27 mã và bảng 8 mã bị loại vì headroom (khoảng 237 triệu US$). Thay "124 mã chiếm 89,7%" (mẫu số không cùng phạm vi) bằng "88 mã HOSE chiếm 92,0% ròng HOSE". Các câu về VIC, điểm nóng và kiểm định RESET nay do mã sinh ra thay vì viết cứng.

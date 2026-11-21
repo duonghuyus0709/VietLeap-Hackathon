@@ -1,9 +1,9 @@
-"""scripts/json_to_csv.py: chuyển toàn bộ JSON trong src/data (raw + processed) sang CSV UTF-8 (có BOM để Excel đọc đúng tiếng Việt) tại src/data/csv/."""
+"""scripts/json_to_csv.py: chuyển toàn bộ JSON trong data (raw + processed) sang CSV UTF-8 (có BOM để Excel đọc đúng tiếng Việt) tại data/csv/."""
 import csv, json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA = ROOT / 'src' / 'data'
+DATA = ROOT / 'data'
 OUT = DATA / 'csv'
 OUT.mkdir(exist_ok=True)
 

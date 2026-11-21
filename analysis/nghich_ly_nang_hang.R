@@ -1,6 +1,5 @@
 # analysis/nghich_ly_nang_hang.R: toàn bộ mã R của báo cáo, tách từ nghich_ly_nang_hang.Rmd bằng knitr::purl().
-# Chạy từ thư mục analysis/: Rscript nghich_ly_nang_hang.R (đọc dữ liệu ở ../src/data/csv).
-# Bản có diễn giải và hình: docs/nghich_ly_nang_hang.html. Sửa ở file .Rmd rồi purl lại để hai file luôn khớp.
+# Chạy từ thư mục analysis/: Rscript nghich_ly_nang_hang.R (đọc dữ liệu ở ../data/csv).
 
 ## ----setup, include=FALSE-----------------------------------------------------
 knitr::opts_chunk$set(
@@ -22,8 +21,8 @@ suppressPackageStartupMessages({
   library(dplyr); library(tidyr); library(readr); library(ggplot2); library(scales)
   library(patchwork); library(fixest); library(sandwich); library(lmtest); library(car)
 })
-# Dữ liệu CSV trong repo, do scripts/json_to_csv.py tạo từ src/data/raw (render từ thư mục analysis/)
-rd  <- function(f) read_csv(file.path("..", "src", "data", "csv", f), show_col_types = FALSE, locale = locale(encoding = "UTF-8"))
+# Dữ liệu CSV trong repo, do scripts/json_to_csv.py tạo từ data/raw (render từ thư mục analysis/)
+rd  <- function(f) read_csv(file.path("..", "data", "csv", f), show_col_types = FALSE, locale = locale(encoding = "UTF-8"))
 TY  <- 1e9
 f1  <- function(x, d = 1) formatC(as.numeric(unlist(x)), format = "f", digits = d, big.mark = ",")
 pc  <- function(x, d = 1) paste0(f1(100 * x, d), "%")
@@ -124,6 +123,18 @@ ftse_out <- fsel %>% arrange(desc(mc)) %>% slice_head(n = 60) %>% filter(san == 
 ftse_lost <- ftse_out %>% filter(hr6 < 0.2, fol >= 0.1) %>%
   mutate(need = pmax(0, (0.2 * fol - room) / 0.8), usd = 1500 * inv / sum(ftse_in$inv)) %>% arrange(desc(usd))
 lost_usd <- sum(ftse_lost$usd)
+# Hàm ý chính sách (Mục 10): chia các mã bị FTSE loại theo mức khó khi đưa headroom lên 20%
+iv    <- function(expr, alt = "(xem Mục 10)") tryCatch(expr, error = function(e) alt)   # giá trị nội dòng an toàn
+usd_m <- function(x) x / 25.65                                                          # tỷ đồng -> triệu US$ (25.650 VND/USD)
+NH <- c("ABB", "ACB", "BAB", "BID", "BVB", "CTG", "EIB", "HDB", "KLB", "LPB", "MBB", "MSB", "NAB", "NVB", "OCB",
+        "PGB", "SGB", "SHB", "SSB", "STB", "TCB", "TPB", "VAB", "VBB", "VCB", "VIB", "VPB")
+# Trần luật định: 30% với ngân hàng (Nghị định 01/2014), 49% với doanh nghiệp khác.
+# Bước 0: đã đạt 20% headroom; Bước 1: đạt được trong trần luật định (doanh nghiệp tự nâng); Bước 2: phải vượt trần luật định.
+pol1 <- tryCatch(ftse_lost %>%
+  mutate(tran_luat = ifelse(nganh %in% "Ngân hàng" | t %in% NH, 0.30, 0.49),
+         buoc = case_when(need <= 1e-9 ~ "Bước 0", fol + need <= tran_luat + 1e-9 ~ "Bước 1", TRUE ~ "Bước 2")),
+  error = function(e) NULL)
+share_nolaw <- iv(sum(pol1$usd[pol1$buoc != "Bước 2"]) / lost_usd, NA)
 
 
 ## ----hyp, echo=FALSE----------------------------------------------------------
@@ -154,7 +165,7 @@ knitr::kable(data.frame(
 # library(dplyr); library(tidyr); library(readr); library(ggplot2); library(scales)
 # library(patchwork); library(fixest); library(sandwich); library(lmtest); library(car)
 # 
-# rd <- function(f) read_csv(file.path("..", "src", "data", "csv", f), show_col_types = FALSE,
+# rd <- function(f) read_csv(file.path("..", "data", "csv", f), show_col_types = FALSE,
 #                            locale = locale(encoding = "UTF-8"))
 # TY   <- 1e9                                    # đồng -> tỷ đồng
 # scr  <- rd("screener400.csv")                  # screen_stocks: 400 mã vốn hóa lớn nhất
@@ -691,14 +702,249 @@ sumh <- tibble(
     paste0("β_room = ", f1(t3["room", 1], 3), "; p = ", f1(t3["room", 4], 3)),
     paste0("Độ phủ ", pc(cov0), " (US\\$6 tỷ: ", pc(cov6), "); nút thắt thanh khoản ", sum(b0$bind == "Thanh khoản"), " mã, room ", sum(b0$bind == "Room"), " mã")),
   `Kết luận` = c(
-    ifelse(sg$p.value < 0.05, "Chấp nhận H1", "Chưa đủ bằng chứng"),
-    ifelse(g(m_p2, "tight", 4) < 0.05 & g(m_p2, "tight", 1) > 0, "Chấp nhận H2", "Chưa đủ bằng chứng"),
-    ifelse(g(m_p2, "narrow", 4) < 0.05 & g(m_p2, "narrow", 1) > 0, "Chấp nhận H3", "Không ủng hộ H3 (quan hệ dạng ngưỡng)"),
-    ifelse(g(m_p4, "tight", 4) < 0.05 & g(m_p4, "tight", 1) > 0, "Chấp nhận H4", "Chưa đủ bằng chứng"),
-    ifelse(ct[2, 4] < 0.05 & ct[2, 1] > 0, "Chấp nhận H5", "Chưa đủ bằng chứng"),
-    ifelse(t3["room", 4] >= 0.10 & t4["room", 4] >= 0.10 & t5["room", 4] >= 0.10, "Ủng hộ H6", "Không ủng hộ H6"),
+    ifelse(sg$p.value < 0.05, "Dữ liệu ủng hộ H1", "Chưa đủ bằng chứng"),
+    ifelse(g(m_p2, "tight", 4) < 0.05 & g(m_p2, "tight", 1) > 0, "Dữ liệu ủng hộ H2", "Chưa đủ bằng chứng"),
+    ifelse(g(m_p2, "narrow", 4) < 0.05 & g(m_p2, "narrow", 1) > 0, "Dữ liệu ủng hộ H3", "Không ủng hộ H3 (quan hệ dạng ngưỡng)"),
+    ifelse(g(m_p4, "tight", 4) < 0.05 & g(m_p4, "tight", 1) > 0, "Dữ liệu ủng hộ H4", "Chưa đủ bằng chứng"),
+    ifelse(ct[2, 4] < 0.05 & ct[2, 1] > 0, "Dữ liệu ủng hộ H5", "Chưa đủ bằng chứng"),
+    ifelse(t3["room", 4] >= 0.10 & t4["room", 4] >= 0.10 & t5["room", 4] >= 0.10, "Không bác bỏ H6 (không tìm thấy bằng chứng room giải thích bán ròng)", "Không ủng hộ H6"),
     ifelse(cov0 < 1 & sum(b0$bind == "Thanh khoản") > sum(b0$bind == "Room"), "Phù hợp H7", "Không phù hợp H7")))
 knitr::kable(sumh, caption = "Bảng 8.1: Tổng hợp kết quả kiểm định các giả thuyết nghiên cứu")
+
+
+## ----pol_channel, error=TRUE, fig.height=2.8, fig.cap="Hình 10.1: Vốn thụ động bị chặn theo từng kênh, kịch bản US\\$1,5 tỷ (triệu US\\$)"----
+try({
+abs100 <- usd_m(sum(b0$gap)); absF <- usd_m(sum(bF$gap))
+bindF  <- if (sum(bF$gap) > 1e-6) names(which.max(tapply(bF$gap, bF$bind, sum))) else "Thanh khoản"
+kenh <- tibble(
+  kenh = c(paste0("Room, kênh loại mã (", nrow(ftse_lost), " mã bị FTSE loại)"),
+           paste0("Room, kênh hấp thụ (rổ ", nrow(b0), " mã, ", short_n(b0), " mã thiếu dư địa)"),
+           paste0(bindF, ", kênh hấp thụ (rổ ", nrow(bF), " mã FTSE thật)")),
+  v    = c(lost_usd, abs100, absF),
+  loai = c("Room", "Room", bindF))
+ggplot(kenh, aes(v, reorder(kenh, v), fill = loai)) + geom_col(width = 0.6) +
+  geom_text(aes(label = f1(v, 0)), hjust = -0.2, size = 3.4) +
+  scale_fill_manual(values = c("Room" = unname(COL["room"]), "Thanh khoản" = unname(COL["liq"]),
+                               "Free float" = unname(COL["ff"]))) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.12))) +
+  labs(x = "Triệu US$", y = NULL)
+})
+
+
+## ----pol_rank, error=TRUE-----------------------------------------------------
+try({
+st15 <- scen_tab[1, ]; st6 <- scen_tab[3, ]; stF <- scen_tab[4, ]
+rank_tab <- tibble(
+  c1 = c("1", "2", "3"),
+  c2 = c("Đưa các mã bị FTSE loại trở lại headroom ≥ 20%; giữ mã lớn không chạm 0% room",
+                           "Giữ lộ trình giải ngân nhiều đợt; tăng thanh khoản nhóm mã lớn",
+                           "Công bố tỷ trọng thỏa thuận của khối ngoại theo mã làm chỉ báo cảnh báo sớm"),
+  c3 = c(paste0(f1(lost_usd, 0), " + ", f1(abs100, 0)),
+                                   paste0(f1(st15[[6]] * 15, 0), " (rổ 100 mã); ", f1(stF[[6]] * 15, 0), " (rổ FTSE)"),
+                                   "Gián tiếp"),
+  c4 = c(paste0(f1(st6[[4]] * 60, 0), " (room +5)"), paste0(f1(st6[[6]] * 60, 0), " (thanh khoản +20%)"), "Gián tiếp"),
+  c5 = c("H2, H4, H5, H7; Bảng 6.6; Bảng 7.5", "H7; Bảng 7.4; Hình 7.3", "H2, H5; Bảng 5.2; Bảng 6.4"),
+  c6 = c(paste0("Cao: ", pc(share_nolaw, 0), " số vốn không cần sửa luật"),
+                    "Trung bình: cần nhiều cơ quan phối hợp", "Cao nhất: dữ liệu đã có, chi phí thấp"))
+names(rank_tab) <- c("Ưu tiên", "Đòn bẩy chính sách", "US\\$1,5 tỷ (triệu US\\$)", "US\\$6 tỷ (triệu US\\$)",
+                     "Bằng chứng chính", "Mức khả thi")
+knitr::kable(rank_tab, caption = "Bảng 10.1: Xếp hạng ba ưu tiên chính sách theo vốn thu về, bằng chứng và mức khả thi")
+})
+
+
+## ----pol_map, error=TRUE------------------------------------------------------
+try({
+emap <- tibble(
+  `Kết quả đã ước lượng` = c(
+    paste("H1:", sumh[[3]][1]), paste("H2:", sumh[[3]][2]), paste("H3:", sumh[[3]][3]),
+    paste("H4:", sumh[[3]][4]), paste("H5:", sumh[[3]][5]), paste("H6:", sumh[[3]][6]),
+    paste0("H7: độ phủ ", pc(cov0), "; ", short_n(b0), " mã thiếu dư địa vì room"),
+    paste0("Bảng 7.5: ", nrow(ftse_lost), " mã bị FTSE loại, khoảng ", f1(lost_usd, 0), " triệu US\\$"),
+    paste0("Hình 7.3: giải ngân 20 phiên, p = 10% chỉ phủ ", f1(100 * grid$c[grid$H == 20 & grid$p == 10], 0), "%"),
+    paste0("US\\$6 tỷ: ", sum(b6$gap > 1e-6 & b6$bind == "Thanh khoản"), " mã thiếu dư địa vì thanh khoản; ", top6_t, " chiếm ", pc(top6_share, 0), " phần bỏ lỡ"),
+    "Hình 5.4: ca TCB, room bằng 0 đi kèm thỏa thuận chiếm phần lớn giao dịch"),
+  `Ưu tiên 1` = c("", "Chính", "Phụ", "Chính", "Phụ", "", "Chính", "Chính", "", "Phụ", "Phụ"),
+  `Ưu tiên 2` = c("", "", "", "", "", "", "Phụ", "", "Chính", "Chính", ""),
+  `Ưu tiên 3` = c("", "Chính", "", "", "Chính", "", "", "", "", "", "Chính"),
+  `Ranh giới` = c("Giới hạn", "", "Giới hạn", "", "", "Giới hạn", "", "", "", "", ""))
+knitr::kable(emap, caption = "Bảng 10.2: Bản đồ bằng chứng. \"Chính\": căn cứ trực tiếp của khuyến nghị; \"Phụ\": căn cứ bổ trợ; \"Giới hạn\": kết quả đặt ranh giới cho khuyến nghị (Mục 10.5)")
+})
+
+
+## ----pol1_tab, error=TRUE-----------------------------------------------------
+try({
+knitr::kable(pol1 %>% arrange(buoc, desc(usd)) %>%
+  transmute(`Bước` = buoc, `Mã` = t, `Headroom 30/6 (%)` = 100 * hr6, `Headroom 19/11 (%)` = 100 * room / fol,
+            `Trần hiện tại (%)` = 100 * fol, `Trần luật định (%)` = 100 * tran_luat,
+            `Cần nâng trần (điểm)` = 100 * need, `Vốn thụ động (triệu US$)` = usd),
+  digits = 1, caption = "Bảng 10.3: Lộ trình theo mã cho Ưu tiên 1 (trần luật định: 30% với ngân hàng, 49% với doanh nghiệp khác; MBB có thể tới 49% theo Nghị định 69/2025)")
+})
+
+
+## ----pol1_fig, error=TRUE, fig.height=3.2, fig.cap="Hình 10.2: Vốn thụ động thu về cộng dồn theo ba bước của Ưu tiên 1 (triệu US\\$). Đường đứt: phần không cần sửa luật"----
+try({
+lab_b <- c("Bước 0" = "Bước 0: giữ nguyên", "Bước 1" = "Bước 1: doanh nghiệp tự nâng trần",
+           "Bước 2" = "Bước 2: cần đổi khung trần")
+colb  <- c("Bước 0" = unname(COL["ff"]), "Bước 1" = unname(COL["liq"]), "Bước 2" = unname(COL["room"]))
+wf  <- pol1 %>% arrange(buoc, desc(usd)) %>%
+  mutate(x1 = cumsum(usd), x0 = x1 - usd, y = match(buoc, names(lab_b)))
+wfs <- wf %>% group_by(buoc, y) %>% summarise(x1 = max(x1), v = sum(usd), .groups = "drop")
+nolaw <- sum(wf$usd[wf$buoc != "Bước 2"])
+ggplot(wf) +
+  geom_rect(aes(xmin = x0, xmax = x1, ymin = y - 0.35, ymax = y + 0.35, fill = buoc), colour = "white", linewidth = 0.6) +
+  geom_text(data = filter(wf, usd >= 15), aes(x = (x0 + x1) / 2, y = y, label = t), colour = "white", size = 3, fontface = "bold") +
+  geom_text(data = wfs, aes(x = x1, y = y, label = paste0("+", f1(v, 0))), hjust = -0.25, size = 3.3) +
+  annotate("rect", xmin = 0, xmax = sum(wf$usd), ymin = 3.65, ymax = 4.35, fill = unname(COL["ink"])) +
+  annotate("text", x = sum(wf$usd), y = 4, label = f1(sum(wf$usd), 0), hjust = -0.25, size = 3.3, fontface = "bold") +
+  geom_vline(xintercept = nolaw, linetype = "dashed", colour = "grey40") +
+  annotate("text", x = nolaw, y = 0.45, label = paste0("không cần sửa luật: ", pc(nolaw / sum(wf$usd), 0)),
+           hjust = 1.05, size = 3.1, colour = "grey30") +
+  scale_fill_manual(values = colb, breaks = names(lab_b), labels = unname(lab_b)) +
+  scale_y_continuous(breaks = 1:4, labels = c("Bước 0", "Bước 1", "Bước 2", "Cộng dồn"), trans = "reverse") +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.1))) +
+  labs(x = "Vốn thụ động ước tính thu về, cộng dồn (triệu US$)", y = NULL)
+})
+
+
+## ----pol1_cliff, error=TRUE, fig.height=3.2, fig.cap="Hình 10.3: Hệ số Tight theo ngưỡng định nghĩa room cạn, kèm khoảng tin cậy 95% (điểm %, từ Bảng 6.6)"----
+try({
+cl_tab <- tibble(nguong = factor(c("Dưới 15%", "Dưới 10%", "Dưới 5%", "Dưới 1%"),
+                                 levels = c("Dưới 15%", "Dưới 10%", "Dưới 5%", "Dưới 1%")),
+                 b = 100 * rob_tab[[2]][c(4, 1, 3, 5)], se = 100 * rob_tab[[3]][c(4, 1, 3, 5)])
+ggplot(cl_tab, aes(nguong, b)) +
+  geom_hline(yintercept = 0, colour = "grey50") +
+  geom_errorbar(aes(ymin = b - 1.96 * se, ymax = b + 1.96 * se), width = 0.12, colour = unname(COL["room"])) +
+  geom_line(aes(group = 1), colour = unname(COL["room"]), linewidth = 1) +
+  geom_point(size = 3, colour = unname(COL["room"])) +
+  geom_text(aes(label = f1(b)), nudge_x = 0.2, size = 3.4) +
+  labs(x = "Ngưỡng định nghĩa room cạn (room còn lại / tổng room)", y = "Hệ số Tight (điểm %)")
+})
+
+
+## ----pol2_fig, error=TRUE, fig.height=3.4, fig.cap="Hình 10.4: Độ phủ theo số phiên giải ngân H, với ba mức tỷ lệ tham gia p, kịch bản US\\$1,5 tỷ (từ Hình 7.3)"----
+try({
+gp <- grid %>% filter(p %in% c(5, 10, 20)) %>%
+  mutate(pl = factor(paste0("p = ", p, "%"), levels = paste0("p = ", c(5, 10, 20), "%")))
+ggplot(gp, aes(H, 100 * c, colour = pl)) + geom_line(linewidth = 1) + geom_point(size = 2.2) +
+  geom_text(data = filter(gp, H == 20), aes(label = f1(100 * c, 0)), hjust = 1.5, size = 3.3, show.legend = FALSE) +
+  annotate("text", x = 250, y = 100 * grid$c[grid$H == 250 & grid$p == 10] + 5, label = "thiết lập cơ sở", size = 3.2) +
+  scale_x_log10(breaks = c(20, 60, 120, 250, 500), expand = expansion(mult = c(0.1, 0.05))) +
+  scale_colour_manual(values = c("#90cdf4", unname(COL["liq"]), "#1a365d")) +
+  coord_cartesian(ylim = c(20, 105)) +
+  labs(x = "H, số phiên giải ngân (thang log)", y = "Độ phủ (%)")
+})
+
+
+## ----pol2_lev, error=TRUE, fig.height=2.8, fig.cap="Hình 10.5: Vốn thu thêm khi dùng từng đòn bẩy ở kịch bản US\\$6 tỷ (triệu US\\$, từ Bảng 7.4)"----
+try({
+lev6 <- tibble(lv = c("Nới room +5 điểm %", "Tăng thanh khoản +20%", "Tăng free float +10 điểm %", "Cả ba đòn bẩy"),
+               diem = c(st6[[4]], st6[[6]], st6[[5]], st6[[7]] - st6[[3]])) %>% mutate(usd = diem * 60)
+ggplot(lev6, aes(usd, reorder(lv, usd), fill = lv)) + geom_col(width = 0.6) +
+  geom_text(aes(label = paste0(f1(usd, 0), " (+", f1(diem), " điểm)")), hjust = -0.1, size = 3.3) +
+  scale_fill_manual(values = c("Nới room +5 điểm %" = unname(COL["room"]), "Tăng thanh khoản +20%" = unname(COL["liq"]),
+                               "Tăng free float +10 điểm %" = unname(COL["ff"]), "Cả ba đòn bẩy" = unname(COL["ink"])),
+                    guide = "none") +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.35))) +
+  labs(x = "Vốn thu thêm (triệu US$)", y = NULL)
+})
+
+
+## ----pol3_fig, error=TRUE, fig.height=3.2, fig.cap="Hình 10.6: Tỷ trọng thỏa thuận gộp (Bảng 5.2) và xác suất dự báo tháng do thỏa thuận chi phối (Bảng 6.4) theo nhóm room"----
+try({
+p3 <- tibble(nhom = rep(as.character(bk[[1]]), 2),
+             chi_so = rep(c("Tỷ trọng thỏa thuận gộp theo giá trị", "Xác suất dự báo tháng thỏa thuận ≥ 50% (Logit)"), each = 3),
+             v = c(bk[[4]], 100 * pr_b)) %>%
+  mutate(nhom = factor(nhom, levels = as.character(bk[[1]])))
+ggplot(p3, aes(nhom, v, fill = chi_so)) +
+  geom_col(position = position_dodge(width = 0.75), width = 0.7) +
+  geom_text(aes(label = paste0(f1(v), "%")), position = position_dodge(width = 0.75), vjust = -0.4, size = 3.2) +
+  scale_fill_manual(values = c(unname(COL["room"]), unname(COL["gray"]))) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.12))) +
+  labs(x = "Room còn lại / tổng room", y = "%")
+})
+
+
+## ----pol_bound, error=TRUE, fig.height=2.6, fig.cap="Hình 10.7: Quy mô dòng bán ròng năm 2026 so với vốn FTSE (nghìn tỷ đồng)"----
+try({
+bd <- tibble(dv = c("Khối ngoại bán ròng trên HOSE, 01/01 đến 19/11/2026", "Vốn thụ động FTSE (US$1,5 tỷ)",
+                    "Ước tính FTSE gồm cả quỹ chủ động (US$6 tỷ)"),
+             v = c(-ytd_net / 1000, 1.5 * 25.65, 6 * 25.65), loai = c("Bán ròng", "Vốn FTSE", "Vốn FTSE")) %>%
+  mutate(dv = factor(dv, levels = rev(dv)))
+ggplot(bd, aes(v, dv, fill = loai)) + geom_col(width = 0.6) +
+  geom_text(aes(label = f1(v)), hjust = -0.2, size = 3.4) +
+  scale_fill_manual(values = c("Bán ròng" = unname(COL["gray"]), "Vốn FTSE" = unname(COL["liq"])), guide = "none") +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.12))) + labs(x = "Nghìn tỷ đồng", y = NULL)
+})
+
+
+## ----pol_road, error=TRUE-----------------------------------------------------
+try({
+road <- tibble(
+  `Mốc` = c("Trước kỳ rà soát 3/2027 (đợt 2, cộng dồn 30%)", "Mùa đại hội cổ đông 2027, trước kỳ 6/2027 và 9/2027 (70% tỷ trọng còn lại)",
+            "Từ năm 2027", "Hàng tháng"),
+  `Việc cần làm` = c(
+    paste0("Bước 0: ", paste(pol1$t[pol1$buoc == "Bước 0"], collapse = ", "), " giữ headroom ≥ 20%. Bắt đầu công bố chỉ báo của Ưu tiên 3."),
+    paste0("Bước 1: ", paste(pol1$t[pol1$buoc == "Bước 1"], collapse = ", "), " thông qua nâng trần sở hữu nước ngoài. Giữ lộ trình bốn đợt (Ưu tiên 2)."),
+    paste0("Bước 2: rà soát khung trần cho ", paste(pol1$t[pol1$buoc == "Bước 2"], collapse = ", "), ". Chuẩn bị thanh khoản cho kịch bản US\\$6 tỷ."),
+    "Cập nhật room, tỷ trọng thỏa thuận và độ phủ mô phỏng."),
+  `Chủ thể` = c("Doanh nghiệp, UBCKNN, sở giao dịch", "Đại hội đồng cổ đông, NHNN, Bộ Tài chính",
+                "Chính phủ, NHNN, Bộ Tài chính, HOSE", "UBCKNN, nhóm nghiên cứu"),
+  `Hoàn thành khi` = c("Các mã Bước 0 được FTSE xét lại", "Các mã Bước 1 đạt headroom ≥ 20%",
+                       "Có quyết định về khung trần", "Có báo cáo tháng"))
+knitr::kable(road, caption = "Bảng 10.4: Lộ trình thực hiện theo các đợt giải ngân của FTSE")
+
+kpi <- tibble(
+  `Chỉ báo` = c("Vốn thụ động mất do headroom dưới 20% (triệu US\\$)", "Số mã rổ 100 thiếu dư địa vì room, US\\$1,5 tỷ",
+                "Độ phủ mô phỏng, US\\$1,5 tỷ", "Độ phủ mô phỏng, US\\$6 tỷ", "Tỷ trọng thỏa thuận gộp, nhóm room dưới 10%"),
+  `Hiện tại (19/11/2026)` = c(f1(lost_usd, 0), sum(b0$gap > 1e-6 & b0$bind == "Room"), pc(cov0), pc(cov6), paste0(f1(bk[[4]][1]), "%")),
+  `Mục tiêu` = c(paste0("≤ ", f1(sum(pol1$usd[pol1$buoc == "Bước 2"]), 0), " sau Bước 0 và Bước 1"), "0",
+                 paste0(pc(lev_cov[1]), " (nới room +5 điểm)"), paste0("≥ ", pc(cov6_all), " (cả ba đòn bẩy)"),
+                 paste0("Tiến về ", f1(bk[[4]][3]), "% (mức nhóm room rộng)")),
+  `Ưu tiên` = c("1", "1", "1", "2", "3"))
+knitr::kable(kpi, caption = "Bảng 10.5: Chỉ báo theo dõi, giá trị hiện tại và mục tiêu mà mô phỏng cho thấy đạt được")
+})
+
+
+## ----next_fig, error=TRUE, fig.height=3.2, fig.cap="Hình 11.1: Độ phủ dịch chuyển bao nhiêu điểm phần trăm so với thiết lập cơ sở khi đổi từng giả định (từ Bảng 7.6)"----
+try({
+sd_tab <- sens_tab %>% filter(!grepl("ε|Cơ sở", `Kịch bản`)) %>%
+  mutate(d = `Độ phủ (%)` - sens_tab[[3]][1], kb = gsub("\\\\", "", `Kịch bản`))
+ggplot(sd_tab, aes(d, reorder(kb, abs(d)), fill = d < 0)) + geom_col(width = 0.6) +
+  geom_vline(xintercept = 0, colour = "grey40") +
+  geom_text(aes(label = f1(d), hjust = ifelse(d < 0, 1.15, -0.15)), size = 3.3) +
+  scale_fill_manual(values = c("TRUE" = unname(COL["room"]), "FALSE" = unname(COL["liq"])), guide = "none") +
+  scale_x_continuous(expand = expansion(mult = 0.15)) +
+  labs(x = "Thay đổi độ phủ so với cơ sở (điểm %)", y = NULL)
+})
+
+
+## ----next_tab, error=TRUE-----------------------------------------------------
+try({
+nxt <- tibble(
+  `Thứ tự` = 1:6,
+  `Giới hạn hiện tại` = c(
+    paste0("Nhu cầu phân bổ theo free float, chưa trừ sở hữu ngoại (−", f1(sens_tab[[3]][1] - sens_tab[[3]][5]), " điểm)"),
+    paste0("Quy mô vốn bất định (−", f1(sens_tab[[3]][1] - sens_tab[[3]][2]), " điểm ở US\\$6 tỷ)"),
+    paste0("Chưa phải quan hệ nhân quả; hiệu ứng cố định mã dựa vào ", length(sw), " mã đổi trạng thái"),
+    "Chưa có giá giao dịch thỏa thuận",
+    "Sau ngày hiệu lực mới có 2 tháng, tháng 11 chưa trọn",
+    "Dashboard cần dán dữ liệu thủ công cho chế độ mô phỏng trực tiếp"),
+  `Hướng tiếp theo` = c(
+    "Dùng trọng số đầu tư được (investability weight) thật của FTSE cho 27 mã, trừ sở hữu ngoại hiện hữu",
+    "Mô phỏng theo lịch 10/20/35/35% và các kịch bản thêm quỹ chủ động, nâng hạng MSCI",
+    "Nghiên cứu sự kiện và sai biệt kép quanh các lần đổi trần room; yêu cầu công bố trần trong 12 tháng của Nghị định 245/2025 tạo thêm nhiều mã đổi trạng thái",
+    "Thu thập giá thỏa thuận, so với giá khớp lệnh cùng ngày",
+    "Chạy lại kiểm định dấu và kiểm định gãy cấu trúc sau đợt giải ngân 3/2027",
+    "Nhúng dữ liệu mã vào sản phẩm, tự cập nhật hàng tháng; mở rộng sang HNX và UPCoM"),
+  `Kết quả kỳ vọng` = c(
+    paste0("Độ phủ chính xác trong khoảng ", f1(sens_tab[[3]][5]), "% đến ", pc(cov0)),
+    "Biết đợt nào, mã nào nghẽn trước",
+    "Ước lượng tác động nhân quả của nới room",
+    "Đo phần bù room bằng tiền, lượng hóa chi phí của room cạn",
+    "Biết nâng hạng có làm đổi xu hướng dòng vốn hay không",
+    "Công cụ giám sát dùng được ngay cho cơ quan quản lý"))
+knitr::kable(nxt, caption = "Bảng 11.1: Sáu hướng phát triển tiếp theo, mỗi hướng gắn với một giới hạn hiện tại")
+})
 
 
 ## ----session------------------------------------------------------------------
